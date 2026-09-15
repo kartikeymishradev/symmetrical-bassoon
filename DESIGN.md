@@ -68,5 +68,4 @@
 6. **How We Are Different**: "We don't give photocopy diets." 5-part structural grid (`YOUR BODY`, `YOUR REPORTS`, `YOUR FOOD`, `YOUR ROUTINE`, `YOUR PLAN`).
 7. **Packages**: REVA Health Plans (01 Trial ₹499, 02 1 Month Reset ₹2,499, 03 3 Month Transformation ₹5,999 Best Seller).
 8. **Patient Journey**: 5-step timeline (01 Book on WhatsApp → 02 Send Reports → 03 Consult on Video → 04 Get Diet / Workout Plan within 24 hrs → 05 Weekly Follow-up).
-9. **Patient Resources (Templates)**: Editorial document previews for REVA Health Personalised Diet Chart, Workout Chart, and Case Sheet / OPD Notes.
-10. **Final CTA & Footer**: "Your health plan should fit your life." Trust points, copyright & contact details (@reva.health, revahealth.com, +91 98XXXX XXXXX).
+9. **Final CTA & Footer**: "Your health plan should fit your life." Trust points, copyright & contact details.

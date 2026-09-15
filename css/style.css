@@ -1072,88 +1072,6 @@ h1, h2, h3, h4 {
 }
 
 /* ==========================================================================
-   PATIENT RESOURCES SECTION
-   ========================================================================== */
-
-.resources-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-6);
-}
-
-.resource-card {
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-6);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.resource-header {
-  margin-bottom: var(--space-4);
-}
-
-.resource-type {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--accent);
-  display: block;
-  margin-bottom: 2px;
-}
-
-.resource-name {
-  font-family: var(--font-sans);
-  font-size: 1.0625rem;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: var(--space-2);
-}
-
-.resource-desc {
-  font-size: 0.84375rem;
-  color: var(--text-muted);
-  line-height: 1.45;
-}
-
-.resource-preview-box {
-  background-color: var(--surface-alt);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
-  padding: var(--space-4);
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: var(--space-4);
-  margin-top: var(--space-2);
-}
-
-.tmpl-line strong {
-  color: var(--text);
-}
-
-.resource-meta {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-.resources-disclaimer {
-  margin-top: var(--space-8);
-  text-align: center;
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-  max-width: 720px;
-  margin-left: auto;
-  margin-right: auto;
-  line-height: 1.5;
-}
-
-/* ==========================================================================
    FINAL CTA SECTION
    ========================================================================== */
 
@@ -1589,8 +1507,7 @@ h1, h2, h3, h4 {
 
 @media (max-width: 1024px) {
   .difference-grid,
-  .reva-packages-grid,
-  .resources-grid {
+  .reva-packages-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 
@@ -1630,8 +1547,7 @@ h1, h2, h3, h4 {
   .philosophy-grid,
   .team-grid,
   .difference-grid,
-  .reva-packages-grid,
-  .resources-grid {
+  .reva-packages-grid {
     grid-template-columns: 1fr;
     gap: var(--space-6);
   }
