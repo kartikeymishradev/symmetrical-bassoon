@@ -74,7 +74,7 @@ const server = http.createServer((req, res) => {
   let filePath = path.join(__dirname, pathname === '/' ? 'index.html' : pathname);
   
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-    filePath = path.join(__dirname, '404.html');
+    filePath = path.join(__dirname, 'index.html');
   }
 
   const ext = path.extname(filePath).toLowerCase();
@@ -82,8 +82,8 @@ const server = http.createServer((req, res) => {
 
   fs.readFile(filePath, (err, content) => {
     if (err) {
-      res.writeHead(404, { 'Content-Type': 'text/html' });
-      res.end('<h1>404 Not Found</h1>');
+      res.writeHead(500, { 'Content-Type': 'text/html' });
+      res.end('<h1>Server Error</h1>');
     } else {
       res.writeHead(200, { 'Content-Type': contentType });
       res.end(content);

@@ -7,7 +7,7 @@ This repository contains the static V1 production codebase for **REVA Health** (
 ```text
 /
 ├── index.html                 # Main website homepage & Customer Care Widget
-├── 404.html                   # Custom REVA Health 404 error page
+├── vercel.json                # Vercel deployment & routing configuration
 ├── DESIGN.md                  # Design system tokens and specifications
 ├── README.md                  # Project & Telegram integration documentation
 ├── .env.example               # Serverless environment variable template
