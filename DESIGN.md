@@ -63,7 +63,7 @@
 1. **Header**: REVA Health logo (`+ REVA Health`), Nav links (Philosophy, Team, Conditions, Packages, Journey), "Book Consultation" CTA.
 2. **Hero**: Editorial split. Left: Overline ("REVA HEALTH"), H1 ("One Condition. Two Experts."), Sub-heading ("Medical care meets personalised nutrition."), description, CTAs ("Book Consultation", "Explore Plans"). Right: Doctor preview card with real Dr. Rishabh Jain portrait.
 3. **Our Philosophy**: "One Condition. Two Experts." 2-column editorial split comparing MD Physician clinical focus vs Clinical Nutritionist diet & lifestyle focus.
-4. **Team**: Dr. Rishabh Jain (MBBS, MD Medicine, AIIMS Experience) & Aryan Tiwari (B.Pharm, Diploma in Applied Diet & Nutrition).
+4. **Team**: Dr. Rishabh Jain (MBBS, MD Medicine, AIIMS Experience).
 5. **Conditions We Support**: Numbered editorial grid (`01 — PCOS / PCOD`, `02 — Type 2 Diabetes`, `03 — Weight Loss`, `04 — Healthy Weight Gain`, `05 — Thyroid + Weight Management`).
 6. **How We Are Different**: "We don't give photocopy diets." 5-part structural grid (`YOUR BODY`, `YOUR REPORTS`, `YOUR FOOD`, `YOUR ROUTINE`, `YOUR PLAN`).
 7. **Packages**: REVA Health Plans (01 Trial ₹499, 02 1 Month Reset ₹2,499, 03 3 Month Transformation ₹5,999 Best Seller).
