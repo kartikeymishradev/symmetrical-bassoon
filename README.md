@@ -1,6 +1,6 @@
 # REVA Health — Premium Online Medical & Personalised Nutrition Practice
 
-This repository contains the static V1 production codebase for **REVA Health** ("One Condition. Two Experts. Medical care meets personalised nutrition.").
+This repository contains the static V1 production codebase for **REVA Health** ("Medical care meets personalised nutrition.").
 
 ## Architecture Overview
 
