@@ -67,5 +67,5 @@
 5. **Conditions We Support**: Numbered editorial grid (`01 — PCOS / PCOD`, `02 — Type 2 Diabetes`, `03 — Weight Loss`, `04 — Healthy Weight Gain`, `05 — Thyroid + Weight Management`).
 6. **How We Are Different**: "We don't give photocopy diets." 5-part structural grid (`YOUR BODY`, `YOUR REPORTS`, `YOUR FOOD`, `YOUR ROUTINE`, `YOUR PLAN`).
 7. **Packages**: REVA Health Plans (01 Trial ₹499, 02 1 Month Reset ₹2,499, 03 3 Month Transformation ₹5,999 Best Seller).
-8. **Patient Journey**: 5-step timeline (01 Book on WhatsApp → 02 Send Reports → 03 Consult on Video → 04 Get Diet / Workout Plan within 24 hrs → 05 Weekly Follow-up).
+8. **Patient Journey**: 5-step timeline (01 Book Appointment → 02 Send Reports → 03 Consult on Video → 04 Get Diet / Workout Plan within 24 hrs → 05 Weekly Follow-up).
 9. **Final CTA & Footer**: "Your health plan should fit your life." Trust points, copyright & contact details.
