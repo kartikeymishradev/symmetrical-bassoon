@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "routes": [
+    {
+      "src": "/api/enquiry",
+      "dest": "/api/enquiry.js"
+    },
+    {
+      "src": "/api/support",
+      "dest": "/api/support.js"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/404.html"
+    }
+  ]
+}
