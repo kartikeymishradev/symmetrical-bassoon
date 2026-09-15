@@ -1565,66 +1565,6 @@ h1, h2, h3, h4 {
 }
 
 /* ==========================================================================
-   404 ERROR PAGE STYLES
-   ========================================================================== */
-
-.error-page-body {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.error-404-container {
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-top: var(--space-20);
-  padding-bottom: var(--space-20);
-}
-
-.error-404-card {
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-16) var(--space-8);
-  max-width: 640px;
-  margin: 0 auto;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.error-code-display {
-  font-family: var(--font-serif);
-  font-size: clamp(4rem, 8vw, 6rem);
-  color: var(--accent);
-  line-height: 1;
-  margin-top: var(--space-2);
-  margin-bottom: var(--space-2);
-}
-
-.error-title {
-  font-size: clamp(1.5rem, 2.5vw, 2rem);
-  margin-bottom: var(--space-3);
-}
-
-.error-description {
-  font-size: 1.0625rem;
-  color: var(--text-muted);
-  margin-bottom: var(--space-8);
-  max-width: 480px;
-}
-
-.error-cta-group {
-  display: flex;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-/* ==========================================================================
    RESPONSIVE BREAKPOINTS
    ========================================================================== */
 
