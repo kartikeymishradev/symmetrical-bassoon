@@ -3,4 +3,4 @@ User-agent: *
 Allow: /
 
 # Sitemaps
-Sitemap: https://revahealth.vercel.app/sitemap.xml
+Sitemap: https://www.docatdoors.com/sitemap.xml
