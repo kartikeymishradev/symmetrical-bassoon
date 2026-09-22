@@ -1,0 +1,6 @@
+# REVA Health Robots Configuration
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://revahealth.vercel.app/sitemap.xml

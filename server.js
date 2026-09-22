@@ -34,7 +34,9 @@ const MIME_TYPES = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon'
+  '.ico': 'image/x-icon',
+  '.xml': 'application/xml; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8'
 };
 
 const server = http.createServer((req, res) => {
@@ -70,11 +72,26 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Handle Static File Serving
+  // Handle Static File Serving with Clean URLs Support
   let filePath = path.join(__dirname, pathname === '/' ? 'index.html' : pathname);
   
-  if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-    filePath = path.join(__dirname, 'index.html');
+  if (!fs.existsSync(filePath)) {
+    if (fs.existsSync(filePath + '.html')) {
+      filePath = filePath + '.html';
+    } else if (fs.existsSync(path.join(filePath, 'index.html'))) {
+      filePath = path.join(filePath, 'index.html');
+    } else if (fs.existsSync(path.join(__dirname, '404.html'))) {
+      filePath = path.join(__dirname, '404.html');
+      res.statusCode = 404;
+    } else {
+      filePath = path.join(__dirname, 'index.html');
+    }
+  } else if (fs.statSync(filePath).isDirectory()) {
+    if (fs.existsSync(path.join(filePath, 'index.html'))) {
+      filePath = path.join(filePath, 'index.html');
+    } else {
+      filePath = path.join(__dirname, 'index.html');
+    }
   }
 
   const ext = path.extname(filePath).toLowerCase();
@@ -85,7 +102,8 @@ const server = http.createServer((req, res) => {
       res.writeHead(500, { 'Content-Type': 'text/html' });
       res.end('<h1>Server Error</h1>');
     } else {
-      res.writeHead(200, { 'Content-Type': contentType });
+      if (!res.statusCode) res.statusCode = 200;
+      res.writeHead(res.statusCode, { 'Content-Type': contentType });
       res.end(content);
     }
   });

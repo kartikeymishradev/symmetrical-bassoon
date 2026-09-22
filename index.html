@@ -17,6 +17,46 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="css/style.css">
+
+  <!-- Structured Data JSON-LD (MedicalOrganization & Physician) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "MedicalOrganization",
+        "@id": "https://revahealth.vercel.app/#organization",
+        "name": "REVA Health",
+        "url": "https://revahealth.vercel.app",
+        "logo": "https://revahealth.vercel.app/assets/icons/favicon-32x32.png",
+        "description": "Evidence-based medical consultation and structured health management online platform.",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "telephone": "+91-8920477960",
+          "contactType": "Customer Support",
+          "availableLanguage": ["English", "Hindi"]
+        }
+      },
+      {
+        "@type": "Physician",
+        "@id": "https://revahealth.vercel.app/#physician",
+        "name": "Dr. Rishabh Jain",
+        "jobTitle": "Consultant Physician",
+        "medicalSpecialty": "GeneralMedicine",
+        "description": "MBBS from VMMC & Safdarjung Hospital, MD Medicine from RML Hospital, clinical experience at AIIMS. Specializes in diabetes, hypertension, rheumatology, and general medicine.",
+        "alumniOf": [
+          "Vardhman Mahavir Medical College & Safdarjung Hospital",
+          "PGIMER & Dr. Ram Manohar Lohia Hospital",
+          "All India Institute of Medical Sciences (AIIMS)"
+        ],
+        "knowsLanguage": ["English", "Hindi"],
+        "worksFor": {
+          "@id": "https://revahealth.vercel.app/#organization"
+        }
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <!-- Accessibility Skip Link -->
@@ -40,6 +80,7 @@
           <li><a href="#conditions" class="nav-link">Conditions</a></li>
           <li><a href="#packages" class="nav-link">Plans</a></li>
           <li><a href="#journey" class="nav-link">Patient Journey</a></li>
+          <li><a href="/blog" class="nav-link">Blog</a></li>
         </ul>
       </nav>
 
@@ -65,6 +106,7 @@
         <li><a href="#conditions" class="mobile-nav-link">Conditions</a></li>
         <li><a href="#packages" class="mobile-nav-link">Plans</a></li>
         <li><a href="#journey" class="mobile-nav-link">Patient Journey</a></li>
+        <li><a href="/blog" class="mobile-nav-link">Blog</a></li>
       </ul>
       <div class="mobile-nav-footer">
         <button class="btn btn-primary btn-block js-book-modal-trigger" data-package="01 — Trial (₹499)">Book Consultation</button>
