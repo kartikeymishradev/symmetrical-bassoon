@@ -24,6 +24,7 @@ if (fs.existsSync(envPath)) {
 
 const enquiryHandler = require('./api/enquiry');
 const supportHandler = require('./api/support');
+const testSheetsHandler = require('./api/test-sheets');
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -68,6 +69,20 @@ const server = http.createServer((req, res) => {
       });
     } else {
       supportHandler(req, createResWrapper(res));
+    }
+    return;
+  }
+
+  if (pathname === '/api/test-sheets') {
+    if (req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', () => {
+        req.body = body;
+        testSheetsHandler(req, createResWrapper(res));
+      });
+    } else {
+      testSheetsHandler(req, createResWrapper(res));
     }
     return;
   }
