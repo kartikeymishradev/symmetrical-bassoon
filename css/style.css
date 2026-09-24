@@ -378,43 +378,53 @@ h1, h2, h3, h4 {
 .mobile-nav-toggle {
   display: none;
   flex-direction: column;
-  justify-content: space-between;
-  width: 36px;
-  height: 36px;
-  padding: 8px 6px;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  padding: 8px;
   background: transparent;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
-.hamburger-line {
+.hamburger-line,
+.hamburger-bar {
   display: block;
-  width: 100%;
+  width: 22px;
   height: 2px;
   background-color: var(--text);
+  border-radius: 1px;
 }
 
-.mobile-nav-drawer {
+.mobile-nav-drawer,
+.mobile-drawer {
   display: none;
   position: fixed;
   top: 0;
   right: 0;
   bottom: 0;
-  width: 300px;
+  width: 320px;
+  max-width: 85vw;
   background-color: var(--surface);
   border-left: 1px solid var(--border);
-  z-index: 1100;
+  z-index: 2000;
   padding: var(--space-6);
   flex-direction: column;
   justify-content: space-between;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  overflow-y: auto;
 }
 
-.mobile-nav-drawer[aria-hidden="false"] {
-  display: flex;
+.mobile-nav-drawer[aria-hidden="false"],
+.mobile-drawer[aria-hidden="false"] {
+  display: flex !important;
 }
 
-.mobile-nav-header {
+.mobile-nav-header,
+.drawer-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -422,27 +432,35 @@ h1, h2, h3, h4 {
   border-bottom: 1px solid var(--border);
 }
 
-.mobile-nav-close {
+.mobile-nav-close,
+.drawer-close {
   background: none;
   border: none;
   font-size: 1.75rem;
+  line-height: 1;
   cursor: pointer;
   color: var(--text);
+  padding: 4px 8px;
 }
 
-.mobile-nav-list {
+.mobile-nav-list,
+.drawer-nav {
   list-style: none;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   margin-top: var(--space-6);
+  padding-left: 0;
 }
 
-.mobile-nav-link {
+.mobile-nav-link,
+.drawer-link {
   font-size: 1.125rem;
   font-weight: 500;
   color: var(--text);
   text-decoration: none;
+  display: block;
+  padding: 4px 0;
 }
 
 /* ==========================================================================
@@ -1691,14 +1709,17 @@ h1, h2, h3, h4 {
 }
 
 .article-container {
+  width: 100%;
   max-width: 840px;
   margin-left: auto;
   margin-right: auto;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
 }
 
 .article-title {
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1.2;
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  line-height: 1.25;
   margin-top: var(--space-3);
   margin-bottom: var(--space-6);
 }
@@ -1720,6 +1741,7 @@ h1, h2, h3, h4 {
   border-radius: 50%;
   border: 1px solid var(--border);
   object-fit: cover;
+  flex-shrink: 0;
 }
 
 .reviewer-info {
@@ -1793,18 +1815,19 @@ h1, h2, h3, h4 {
   font-size: 1.0625rem;
   line-height: 1.7;
   color: var(--text);
+  width: 100%;
 }
 
 .article-body-content h2 {
-  font-size: clamp(1.5rem, 2.5vw, 2rem);
-  margin-top: var(--space-12);
+  font-size: clamp(1.35rem, 2.5vw, 1.85rem);
+  margin-top: var(--space-10);
   margin-bottom: var(--space-4);
   padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--border-light);
 }
 
 .article-body-content h3 {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   margin-top: var(--space-8);
   margin-bottom: var(--space-3);
 }
@@ -1825,7 +1848,9 @@ h1, h2, h3, h4 {
 
 /* BP Measurement Table */
 .bp-table-container {
+  width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   margin-top: var(--space-6);
   margin-bottom: var(--space-8);
   border: 1px solid var(--border);
@@ -1834,6 +1859,7 @@ h1, h2, h3, h4 {
 
 .bp-table {
   width: 100%;
+  min-width: 540px;
   border-collapse: collapse;
   text-align: left;
   font-size: 0.9375rem;
@@ -2031,6 +2057,18 @@ html, body {
 
   .footer-trust-grid {
     grid-template-columns: 1fr;
+  }
+
+  .article-reviewer-box {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--space-4);
+  }
+
+  .lang-switcher-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
   }
 
   .section-padding {

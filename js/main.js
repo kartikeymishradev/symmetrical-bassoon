@@ -6,11 +6,11 @@
 (function () {
   'use strict';
 
-  // DOM Elements: Header & Navigation
-  const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
-  const mobileNavDrawer = document.getElementById('mobile-nav-drawer');
-  const mobileNavClose = document.querySelector('.mobile-nav-close');
-  const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+  // DOM Elements: Header & Navigation (with fallback support)
+  const mobileNavToggle = document.querySelector('.mobile-nav-toggle') || document.getElementById('mobileNavToggle');
+  const mobileNavDrawer = document.getElementById('mobile-nav-drawer') || document.getElementById('mobileDrawer') || document.querySelector('.mobile-drawer');
+  const mobileNavClose = document.querySelector('.mobile-nav-close') || document.querySelector('.drawer-close') || document.getElementById('drawerClose');
+  const mobileNavLinks = document.querySelectorAll('.mobile-nav-link, .drawer-link');
   
   // DOM Elements: Booking Modal
   const bookingModal = document.getElementById('booking-modal');
@@ -22,10 +22,10 @@
   const bookingSubmitBtn = document.getElementById('booking-submit-btn');
   const modalTriggers = document.querySelectorAll('.js-book-modal-trigger');
 
-  // DOM Elements: Customer Care Chat Widget
-  const careLauncher = document.getElementById('care-widget-launcher');
-  const carePanel = document.getElementById('care-widget-panel');
-  const careCloseBtn = document.getElementById('care-widget-close');
+  // DOM Elements: Customer Care Chat Widget (with fallback support)
+  const careLauncher = document.getElementById('care-widget-launcher') || document.getElementById('widgetLauncher');
+  const carePanel = document.getElementById('care-widget-panel') || document.getElementById('widgetPanel');
+  const careCloseBtn = document.getElementById('care-widget-close') || document.getElementById('widgetClose');
   const careForm = document.getElementById('care-widget-form');
   const careSubmitBtn = document.getElementById('widget-submit-btn');
   const careStatusMsg = document.getElementById('widget-status-msg');
