@@ -136,7 +136,7 @@
       </nav>
 
       <div class="header-actions">
-        <a href="/#packages" class="btn btn-secondary btn-sm">Book Consultation</a>
+        <button type="button" class="btn btn-secondary btn-sm js-book-modal-trigger" data-package="Doctor Consultation (₹400)">Book Consultation</button>
         <button type="button" class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle navigation drawer" aria-expanded="false">
           <span class="hamburger-line"></span>
           <span class="hamburger-line"></span>
@@ -166,7 +166,7 @@
         <li><a href="/blog" class="mobile-nav-link">Blog & Medical Journal</a></li>
       </ul>
       <div class="mobile-nav-footer">
-        <a href="/#packages" class="btn btn-primary btn-block">Book Consultation</a>
+        <button type="button" class="btn btn-primary btn-block js-book-modal-trigger" data-package="Doctor Consultation (₹400)">Book Consultation</button>
       </div>
     </div>
   </header>
@@ -184,7 +184,7 @@
         
         <!-- Medical Reviewer Block -->
         <div class="article-reviewer-box">
-          <img src="/assets/dr-rishabh-jain.jpg" alt="Dr. Rishabh Jain, MD Medicine" class="reviewer-avatar">
+          <img src="/assets/images/dr-rishabh-jain.jpg" alt="Dr. Rishabh Jain, MD Medicine" class="reviewer-avatar">
           <div class="reviewer-info">
             <span class="reviewer-name">Dr. Rishabh Jain, MD Medicine</span>
             <span class="reviewer-title">Consultant Physician • VMMC & Safdarjung Hospital | RML Hospital | AIIMS</span>
@@ -635,7 +635,87 @@
         <p class="footer-copy">&copy; 2026 REVA Health. All rights reserved.</p>
       </div>
     </div>
-  </footer>
+  <!-- Booking Modal -->
+  <div id="booking-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div>
+          <span class="meta-label">REVA HEALTH CONSULTATION</span>
+          <h2 id="modal-title" class="modal-title">Book Consultation</h2>
+        </div>
+        <button class="modal-close js-modal-close" aria-label="Close modal">&times;</button>
+      </div>
+
+      <!-- Form View -->
+      <form id="booking-form" class="modal-body">
+        <div class="form-group">
+          <label for="form-package" class="form-label">Selected Plan</label>
+          <select id="form-package" class="form-control" required>
+            <option value="Doctor Consultation (₹400)">Doctor Consultation (₹400)</option>
+            <option value="Nutrition Consultation (₹299)">Nutrition Consultation (₹299)</option>
+            <option value="Personalised Diet Plan (₹499)">Personalised Diet Plan (₹499)</option>
+            <option value="Diet + Workout Plan (₹699)">Diet + Workout Plan (₹699)</option>
+            <option value="Doctor + Nutrition Combo Package (₹999)" selected>Doctor + Nutrition Combo Package (₹999) — BEST SELLER</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-name" class="form-label">Your Name</label>
+            <input type="text" id="form-name" class="form-control" placeholder="e.g. Ramesh Kumar" required>
+          </div>
+          <div class="form-group">
+            <label for="form-phone" class="form-label">Phone / WhatsApp Number</label>
+            <input type="tel" id="form-phone" class="form-control" placeholder="e.g. +91 98765 43210" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-condition" class="form-label">Primary Health Focus</label>
+            <select id="form-condition" class="form-control">
+              <option value="PCOS / PCOD">PCOS / PCOD</option>
+              <option value="Type 2 Diabetes">Type 2 Diabetes</option>
+              <option value="Weight Loss">Weight Loss</option>
+              <option value="Healthy Weight Gain">Healthy Weight Gain</option>
+              <option value="Thyroid + Weight Management">Thyroid + Weight Management</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="form-date" class="form-label">Preferred Date</label>
+            <input type="date" id="form-date" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="form-notes" class="form-label">Recent Blood Reports / Notes (Optional)</label>
+          <textarea id="form-notes" class="form-control" rows="2" placeholder="Mention any recent blood test results or primary dietary preferences"></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" id="booking-submit-btn" class="btn btn-accent btn-block">
+            <span>Submit Consultation Request</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Confirmation View -->
+      <div id="booking-confirmation" class="modal-body confirmation-panel" style="display: none;">
+        <div class="confirmation-icon">[+]</div>
+        <h3 class="confirmation-heading">Request Recorded</h3>
+        <p class="confirmation-sub">Your consultation appointment request has been transmitted via serverless endpoint.</p>
+        
+        <div class="summary-box">
+          <div class="summary-row"><strong>Name:</strong> <span id="summary-name"></span></div>
+          <div class="summary-row"><strong>Phone:</strong> <span id="summary-phone"></span></div>
+          <div class="summary-row"><strong>Selected Plan:</strong> <span id="summary-package"></span></div>
+          <div class="summary-row"><strong>Preferred Date:</strong> <span id="summary-date"></span></div>
+        </div>
+
+        <button class="btn btn-outline btn-block js-modal-close">Close</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Customer Care Floating Chat Widget -->
   <div class="care-widget-wrapper">
