@@ -1915,13 +1915,21 @@ h1, h2, h3, h4 {
 }
 
 /* ==========================================================================
-   RESPONSIVE BREAKPOINTS
+   RESPONSIVE BREAKPOINTS & MOBILE FIXES
    ========================================================================== */
 
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 @media (max-width: 1024px) {
-  .difference-grid,
-  .reva-packages-grid {
+  .difference-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .reva-packages-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .journey-grid {
@@ -1977,24 +1985,48 @@ h1, h2, h3, h4 {
   .care-widget-panel {
     position: fixed;
     bottom: 76px;
-    left: 16px;
-    right: 16px;
+    left: 12px;
+    right: 12px;
     width: auto;
     max-width: none;
+  }
+
+  .blog-featured-card {
+    grid-template-columns: 1fr;
+    padding: var(--space-6);
+  }
+
+  .blog-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .container {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
   }
 }
 
 @media (max-width: 480px) {
+  .hero-title {
+    font-size: 2.125rem;
+  }
+
   .hero-doc-profile {
     flex-direction: column;
-    align-items: center;
-    text-align: center;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .team-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .hero-fee-box {
     flex-direction: column;
     gap: var(--space-3);
-    text-align: center;
+    text-align: left;
+    align-items: flex-start;
   }
 
   .footer-trust-grid {
@@ -2004,6 +2036,20 @@ h1, h2, h3, h4 {
   .section-padding {
     padding-top: var(--space-12);
     padding-bottom: var(--space-12);
+  }
+
+  .modal-container {
+    padding: 0;
+    max-width: calc(100vw - 24px);
+  }
+
+  .modal-header, .modal-body {
+    padding: var(--space-4);
+  }
+
+  .btn {
+    min-height: 44px;
+    padding: 10px 16px;
   }
 }
 
