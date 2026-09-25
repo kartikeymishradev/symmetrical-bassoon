@@ -1,8 +1,11 @@
-# Environment Variables
+# Environment Variables & Secret Keys
 .env
 .env.local
 .env.development.local
 .env.production.local
+reva-health-*.json
+*-*.json
+*.key
 
 # Dependencies
 node_modules/
