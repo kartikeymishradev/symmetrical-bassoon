@@ -76,12 +76,22 @@ module.exports = async function handler(req, res) {
   const timestamp = new Date().toISOString();
   const dummyRow = [
     'TEST-001',
+    timestamp,
     'Dummy Patient Test',
     '+91 9999999999',
+    'test@revahealth.com',
     'Doctor Consultation (₹400)',
-    'General Medicine',
+    400,
+    'PENDING',
+    '',
+    '',
     timestamp.split('T')[0],
-    `Test append entry generated at ${timestamp}`
+    '',
+    'REQUESTED',
+    '',
+    'LOCAL',
+    `Test append entry generated at ${timestamp}`,
+    timestamp
   ];
 
   try {
@@ -97,11 +107,11 @@ module.exports = async function handler(req, res) {
     const sheets = google.sheets({ version: 'v4', auth });
 
     // Step 2: Append Dummy Row to 'Bookings' Sheet
-    const targetRange = 'Bookings!A:G';
+    const targetRange = 'Bookings!A:Q';
     const appendResult = await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
       range: targetRange,
-      valueInputOption: 'USER_ENTERED',
+      valueInputOption: 'RAW',
       requestBody: {
         values: [dummyRow]
       }
