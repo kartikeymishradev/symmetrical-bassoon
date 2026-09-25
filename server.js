@@ -25,6 +25,7 @@ if (fs.existsSync(envPath)) {
 const enquiryHandler = require('./api/enquiry');
 const supportHandler = require('./api/support');
 const testSheetsHandler = require('./api/test-sheets');
+const servicesHandler = require('./api/services');
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -84,6 +85,11 @@ const server = http.createServer((req, res) => {
     } else {
       testSheetsHandler(req, createResWrapper(res));
     }
+    return;
+  }
+
+  if (pathname === '/api/services') {
+    servicesHandler(req, createResWrapper(res));
     return;
   }
 

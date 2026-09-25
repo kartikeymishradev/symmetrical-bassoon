@@ -3,65 +3,13 @@
  * Route: POST /api/enquiry
  *
  * 1. Validates input fields (name and phone required).
- * 2. Appends actual enquiry entry to Google Sheets ('Bookings' tab).
+ * 2. Appends actual enquiry entry to Google Sheets ('Bookings' tab, 17 columns A:Q).
  * 3. Transmits enquiry notification to Telegram Admin Chat (if configured).
+ * 4. Updates telegram_status accurately ('SENT', 'FAILED', or 'LOCAL').
  */
 
 const https = require('https');
-const { google } = require('googleapis');
-
-function extractSpreadsheetId(input) {
-  if (!input) return '';
-  const trimmed = input.trim().replace(/^["']|["']$/g, '');
-  const match = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  if (match) return match[1];
-  return trimmed;
-}
-
-/**
- * Appends row data to Google Sheets 'Bookings' tab using official SDK.
- * Credentials are NEVER exposed or logged.
- */
-async function appendToGoogleSheets(rowData) {
-  const rawSheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID || process.env.SPREADSHEET_ID || '';
-  const clientEmail = (process.env.GOOGLE_CLIENT_EMAIL || process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '').trim().replace(/^["']|["']$/g, '');
-  const rawPrivateKey = process.env.GOOGLE_PRIVATE_KEY || process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '';
-
-  const sheetId = extractSpreadsheetId(rawSheetId);
-  const privateKey = rawPrivateKey
-    ? rawPrivateKey.replace(/^["']([\s\S]*)["']$/, '$1').replace(/\\n/g, '\n').trim()
-    : '';
-
-  if (!sheetId || !clientEmail || !privateKey) {
-    console.warn('Google Sheets environment variables missing or incomplete; skipping Sheets append.');
-    return { success: false, reason: 'unconfigured' };
-  }
-
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: clientEmail,
-      private_key: privateKey
-    },
-    scopes: ['https://www.googleapis.com/auth/spreadsheets']
-  });
-
-  const sheets = google.sheets({ version: 'v4', auth });
-  const targetRange = 'Bookings!A:G';
-  const appendResult = await sheets.spreadsheets.values.append({
-    spreadsheetId: sheetId,
-    range: targetRange,
-    valueInputOption: 'USER_ENTERED',
-    requestBody: {
-      values: [rowData]
-    }
-  });
-
-  return {
-    success: true,
-    updatedRange: appendResult.data.updates ? appendResult.data.updates.updatedRange : targetRange,
-    updatedRows: appendResult.data.updates ? appendResult.data.updates.updatedRows : 1
-  };
-}
+const { appendBooking, updateBookingTelegramStatus, getServiceAmount } = require('../lib/sheets');
 
 module.exports = async function handler(req, res) {
   // CORS Headers
@@ -97,38 +45,70 @@ module.exports = async function handler(req, res) {
     const timestamp = new Date().toISOString();
     const bookingId = `ENQ-${Date.now().toString(36).toUpperCase()}`;
 
-    // Construct Sheets Row [Booking ID, Name, Phone, Package, Condition, Date, Notes]
-    const notesSummary = cleanNotes
-      ? `${cleanNotes}${cleanEmail ? ` | Email: ${cleanEmail}` : ''}`
-      : (cleanEmail ? `Email: ${cleanEmail}` : 'Submitted from REVA Health Website');
+    // Prefer amount from Services sheet, with fallback to package string extraction
+    const amount = await getServiceAmount(cleanPackage, cleanPackage);
 
+    // Format Notes field
+    const notesSummary = cleanCondition
+      ? `[Focus: ${cleanCondition}] ${cleanNotes}`.trim()
+      : (cleanNotes || 'Submitted from REVA Health Website');
+
+    // Check Telegram token configuration to determine initial telegram_status
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+    const isPlaceholder = !token || !chatId || token.includes('your_') || token.includes('temporary_') || chatId.includes('your_');
+    const telegramStatusInitial = isPlaceholder ? 'LOCAL' : 'PENDING';
+
+    // Construct 17-Column Sheets Row matching 'Bookings' headers A:Q exactly
+    // Col A: booking_id
+    // Col B: created_at
+    // Col C: patient_name
+    // Col D: phone
+    // Col E: email
+    // Col F: service
+    // Col G: amount
+    // Col H: payment_status
+    // Col I: razorpay_payment_id
+    // Col J: razorpay_link_id
+    // Col K: appointment_date
+    // Col L: appointment_time
+    // Col M: appointment_status
+    // Col N: assigned_to
+    // Col O: telegram_status
+    // Col P: notes
+    // Col Q: updated_at
     const sheetsRow = [
       bookingId,
+      timestamp,
       cleanName,
       cleanPhone,
+      cleanEmail,
       cleanPackage || 'General Consultation',
-      cleanCondition || 'N/A',
+      amount,
+      'PENDING',
+      '',
+      '',
       cleanDate || timestamp.split('T')[0],
-      notesSummary
+      '',
+      'REQUESTED',
+      '',
+      telegramStatusInitial,
+      notesSummary,
+      timestamp
     ];
 
     // 1. Write to Google Sheets
     let sheetsSuccess = false;
     let updatedRange = null;
     try {
-      const sheetsRes = await appendToGoogleSheets(sheetsRow);
+      const sheetsRes = await appendBooking(sheetsRow);
       sheetsSuccess = sheetsRes.success;
       if (sheetsRes.updatedRange) updatedRange = sheetsRes.updatedRange;
     } catch (sheetsErr) {
       console.error('Google Sheets append error:', sheetsErr.message || sheetsErr);
-      // Non-blocking for general API handler unless Sheets is required
     }
 
     // 2. Transmit to Telegram (if configured)
-    const token = process.env.TELEGRAM_BOT_TOKEN;
-    const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
-    const isPlaceholder = !token || !chatId || token.includes('your_') || token.includes('temporary_') || chatId.includes('your_');
-
     if (isPlaceholder) {
       return res.status(200).json({
         success: true,
@@ -174,8 +154,9 @@ module.exports = async function handler(req, res) {
       const tgReq = https.request(options, (tgRes) => {
         let responseString = '';
         tgRes.on('data', chunk => responseString += chunk);
-        tgRes.on('end', () => {
+        tgRes.on('end', async () => {
           if (tgRes.statusCode === 200) {
+            if (sheetsSuccess) await updateBookingTelegramStatus(bookingId, 'SENT');
             res.status(200).json({
               success: true,
               bookingId: bookingId,
@@ -186,6 +167,7 @@ module.exports = async function handler(req, res) {
           } else {
             console.error('Telegram API error:', responseString);
             if (sheetsSuccess) {
+              await updateBookingTelegramStatus(bookingId, 'FAILED');
               res.status(200).json({
                 success: true,
                 bookingId: bookingId,
@@ -201,9 +183,10 @@ module.exports = async function handler(req, res) {
         });
       });
 
-      tgReq.on('error', (err) => {
+      tgReq.on('error', async (err) => {
         console.error('HTTPS request error:', err);
         if (sheetsSuccess) {
+          await updateBookingTelegramStatus(bookingId, 'FAILED');
           res.status(200).json({
             success: true,
             bookingId: bookingId,
