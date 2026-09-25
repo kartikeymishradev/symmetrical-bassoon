@@ -127,11 +127,11 @@ module.exports = async function handler(req, res) {
   // Resolve Env Variables (Support standard naming variations)
   const sheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID || process.env.SPREADSHEET_ID;
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL || process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  let privateKey = process.env.GOOGLE_PRIVATE_KEY || process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
-
-  if (privateKey) {
-    privateKey = privateKey.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n');
-  }
+  const rawPrivateKey = process.env.GOOGLE_PRIVATE_KEY || process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
+  
+  const privateKey = rawPrivateKey
+    ? rawPrivateKey.replace(/^["'](.*)["']$/, '$1').replace(/\\n/g, '\n').trim()
+    : '';
 
   const missingVars = [];
   if (!sheetId) missingVars.push('GOOGLE_SHEET_ID');
