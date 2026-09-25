@@ -1,0 +1,25 @@
+{
+  "name": "health-wellness-consultation",
+  "version": "1.0.0",
+  "description": "This repository contains the static V1 production codebase for **REVA Health** (\"Medical care meets personalised nutrition.\").",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kartikeymishradev/symmetrical-bassoon.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/kartikeymishradev/symmetrical-bassoon/issues"
+  },
+  "homepage": "https://github.com/kartikeymishradev/symmetrical-bassoon#readme",
+  "dependencies": {
+    "googleapis": "^182.0.0"
+  }
+}

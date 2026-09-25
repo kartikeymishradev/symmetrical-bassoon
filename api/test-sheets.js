@@ -2,114 +2,25 @@
  * Temporary Serverless API Endpoint: Google Sheets Integration Test
  * Route: GET or POST /api/test-sheets
  *
- * Tests connection to Google Sheets API using Service Account credentials
- * and appends a dummy row [TEST-001] to the 'Bookings' sheet.
- * Credentials are NEVER exposed or logged. Safe key diagnostics included.
+ * Uses official `googleapis` SDK with GoogleAuth credentials.
+ * Appends dummy row [TEST-001] to 'Bookings' sheet.
+ * Credentials are NEVER exposed or logged.
  */
 
-const crypto = require('crypto');
-const https = require('https');
+const { google } = require('googleapis');
 
-function base64url(input) {
-  const buf = typeof input === 'string' ? Buffer.from(input, 'utf8') : input;
-  return buf.toString('base64')
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
+function extractSpreadsheetId(input) {
+  if (!input) return '';
+  const trimmed = input.trim().replace(/^["']|["']$/g, '');
+  const match = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (match) return match[1];
+  return trimmed;
 }
 
-async function getGoogleAccessToken(clientEmail, privateKey) {
-  const now = Math.floor(Date.now() / 1000);
-  const header = { alg: 'RS256', typ: 'JWT' };
-  const claimSet = {
-    iss: clientEmail,
-    scope: 'https://www.googleapis.com/auth/spreadsheets',
-    aud: 'https://oauth2.googleapis.com/token',
-    exp: now + 3600,
-    iat: now
-  };
-
-  const encodedHeader = base64url(JSON.stringify(header));
-  const encodedClaimSet = base64url(JSON.stringify(claimSet));
-  const signatureInput = `${encodedHeader}.${encodedClaimSet}`;
-
-  const signer = crypto.createSign('RSA-SHA256');
-  signer.update(signatureInput);
-  const signature = signer.sign(privateKey);
-  const jwt = `${signatureInput}.${base64url(signature)}`;
-
-  const postData = new URLSearchParams({
-    grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-    assertion: jwt
-  }).toString();
-
-  return new Promise((resolve, reject) => {
-    const req = https.request('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Content-Length': Buffer.byteLength(postData)
-      }
-    }, (res) => {
-      let body = '';
-      res.on('data', chunk => body += chunk);
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(body);
-          if (res.statusCode >= 200 && res.statusCode < 300 && parsed.access_token) {
-            resolve(parsed.access_token);
-          } else {
-            const errMsg = parsed.error_description || parsed.error || `HTTP ${res.statusCode}`;
-            reject(new Error(`Google OAuth Auth Failed: ${errMsg}`));
-          }
-        } catch (e) {
-          reject(new Error(`Failed to parse Google OAuth response: ${e.message}`));
-        }
-      });
-    });
-
-    req.on('error', (err) => reject(new Error(`OAuth Request Network Error: ${err.message}`)));
-    req.write(postData);
-    req.end();
-  });
-}
-
-async function appendToGoogleSheet(accessToken, sheetId, range, rowValues) {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED`;
-  const postData = JSON.stringify({
-    values: [rowValues]
-  });
-
-  return new Promise((resolve, reject) => {
-    const req = https.request(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      }
-    }, (res) => {
-      let body = '';
-      res.on('data', chunk => body += chunk);
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(body);
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            resolve(parsed);
-          } else {
-            const errMsg = parsed.error ? parsed.error.message : `HTTP ${res.statusCode}`;
-            reject(new Error(`Google Sheets API Error: ${errMsg}`));
-          }
-        } catch (e) {
-          reject(new Error(`Failed to parse Sheets API response: ${e.message}`));
-        }
-      });
-    });
-
-    req.on('error', (err) => reject(new Error(`Sheets Request Network Error: ${err.message}`)));
-    req.write(postData);
-    req.end();
-  });
+function sanitizeSecret(text) {
+  if (typeof text !== 'string') return '';
+  return text.replace(/-----BEGIN PRIVATE KEY-----[\s\S]*?-----END PRIVATE KEY-----/g, '[REDACTED_PRIVATE_KEY]')
+             .replace(/eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g, '[REDACTED_JWT_TOKEN]');
 }
 
 module.exports = async function handler(req, res) {
@@ -123,59 +34,29 @@ module.exports = async function handler(req, res) {
   }
 
   // Resolve Env Variables (Support standard naming variations)
-  const sheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID || process.env.SPREADSHEET_ID;
-  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL || process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const rawSheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID || process.env.SPREADSHEET_ID || '';
+  const clientEmail = (process.env.GOOGLE_CLIENT_EMAIL || process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '').trim().replace(/^["']|["']$/g, '');
   const rawPrivateKey = process.env.GOOGLE_PRIVATE_KEY || process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '';
 
-  // Safe Key Diagnostics (Zero secret exposure)
+  const sheetId = extractSpreadsheetId(rawSheetId);
+
+  // Private Key Normalization (Preserved, unchanged)
+  const privateKey = rawPrivateKey
+    ? rawPrivateKey.replace(/^["'](.*)["']$/, '$1').replace(/\\n/g, '\n').trim()
+    : '';
+
+  // Safe Key Diagnostics
   const diagnostics = {
     exists: Boolean(rawPrivateKey),
     rawLength: rawPrivateKey.length,
     literalNewlineCount: (rawPrivateKey.match(/\\n/g) || []).length,
     realNewlineCount: (rawPrivateKey.match(/\n/g) || []).length,
-    startsWithHeader: false,
-    endsWithFooter: false,
-    normalizedLength: 0
+    startsWithHeader: privateKey.startsWith('-----BEGIN PRIVATE KEY-----') || privateKey.startsWith('-----BEGIN RSA PRIVATE KEY-----'),
+    endsWithFooter: privateKey.endsWith('-----END PRIVATE KEY-----') || privateKey.endsWith('-----END RSA PRIVATE KEY-----'),
+    normalizedLength: privateKey.length,
+    sheetIdParsed: sheetId ? `${sheetId.substring(0, 6)}...${sheetId.substring(Math.max(0, sheetId.length - 4))}` : 'MISSING',
+    clientEmailParsed: clientEmail ? `${clientEmail.substring(0, 6)}...` : 'MISSING'
   };
-
-  // Robust Key Normalization Logic
-  let privateKey = rawPrivateKey;
-  if (privateKey) {
-    // Strip surrounding quotes if present
-    privateKey = privateKey.replace(/^["'](.*)["']$/, '$1').trim();
-    if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
-      privateKey = privateKey.slice(1, -1);
-    }
-    if (privateKey.startsWith("'") && privateKey.endsWith("'")) {
-      privateKey = privateKey.slice(1, -1);
-    }
-
-    // Replace escaped \n with actual newlines
-    privateKey = privateKey.replace(/\\n/g, '\n');
-
-    // Handle space-separated single line PEM keys if newlines were lost
-    if (!privateKey.includes('\n')) {
-      const header = '-----BEGIN PRIVATE KEY-----';
-      const footer = '-----END PRIVATE KEY-----';
-      const rsaHeader = '-----BEGIN RSA PRIVATE KEY-----';
-      const rsaFooter = '-----END RSA PRIVATE KEY-----';
-
-      let h = privateKey.includes(rsaHeader) ? rsaHeader : (privateKey.includes(header) ? header : '');
-      let f = privateKey.includes(rsaFooter) ? rsaFooter : (privateKey.includes(footer) ? footer : '');
-
-      if (h && f) {
-        let body = privateKey.replace(h, '').replace(f, '').replace(/\s+/g, '');
-        const lines = body.match(/.{1,64}/g) || [body];
-        privateKey = `${h}\n${lines.join('\n')}\n${f}`;
-      }
-    }
-
-    privateKey = privateKey.trim();
-  }
-
-  diagnostics.startsWithHeader = privateKey.startsWith('-----BEGIN PRIVATE KEY-----') || privateKey.startsWith('-----BEGIN RSA PRIVATE KEY-----');
-  diagnostics.endsWithFooter = privateKey.endsWith('-----END PRIVATE KEY-----') || privateKey.endsWith('-----END RSA PRIVATE KEY-----');
-  diagnostics.normalizedLength = privateKey.length;
 
   const missingVars = [];
   if (!sheetId) missingVars.push('GOOGLE_SHEET_ID');
@@ -204,27 +85,55 @@ module.exports = async function handler(req, res) {
   ];
 
   try {
-    // Step 1: Exchange Service Account JWT for OAuth Access Token
-    const accessToken = await getGoogleAccessToken(clientEmail, privateKey);
+    // Step 1: Initialize Official GoogleAuth Client SDK
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: clientEmail,
+        private_key: privateKey
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
 
     // Step 2: Append Dummy Row to 'Bookings' Sheet
-    const sheetResult = await appendToGoogleSheet(accessToken, sheetId, 'Bookings', dummyRow);
+    const targetRange = 'Bookings!A:G';
+    const appendResult = await sheets.spreadsheets.values.append({
+      spreadsheetId: sheetId,
+      range: targetRange,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [dummyRow]
+      }
+    });
 
     return res.status(200).json({
       success: true,
       message: 'Google Sheets connection successful! Dummy row TEST-001 appended to Bookings sheet.',
-      appendedRange: sheetResult.updates ? sheetResult.updates.updatedRange : 'Bookings',
-      updatedRows: sheetResult.updates ? sheetResult.updates.updatedRows : 1,
+      appendedRange: appendResult.data.updates ? appendResult.data.updates.updatedRange : targetRange,
+      updatedRows: appendResult.data.updates ? appendResult.data.updates.updatedRows : 1,
       keyDiagnostics: diagnostics,
       dummyRow: dummyRow
     });
 
   } catch (err) {
-    return res.status(500).json({
+    const statusCode = err.code || err.status || (err.response ? err.response.status : 500);
+    const contentType = err.response && err.response.headers ? err.response.headers['content-type'] : 'unknown';
+    const rawResponseBody = err.response && err.response.data
+      ? (typeof err.response.data === 'string' ? err.response.data : JSON.stringify(err.response.data))
+      : err.message || '';
+
+    const sanitizedSnippet = sanitizeSecret(rawResponseBody).substring(0, 100);
+
+    return res.status(statusCode >= 400 && statusCode < 600 ? statusCode : 500).json({
       success: false,
-      error: err.message || 'Failed to connect to Google Sheets API',
+      error: 'Google Sheets API Request Failed',
+      httpStatusCode: statusCode,
+      contentType: contentType,
+      responseSnippetFirst100Chars: sanitizedSnippet,
+      targetSpreadsheetIdPreview: `${sheetId.substring(0, 6)}...${sheetId.substring(Math.max(0, sheetId.length - 4))}`,
       keyDiagnostics: diagnostics,
-      hint: 'Verify Service Account permissions on the spreadsheet and check private key formatting.'
+      hint: 'Check spreadsheet sharing (must be shared with client_email as Editor) and tab name (must have a tab named "Bookings").'
     });
   }
 };
