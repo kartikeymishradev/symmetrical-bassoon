@@ -40,9 +40,9 @@ module.exports = async function handler(req, res) {
 
   const sheetId = extractSpreadsheetId(rawSheetId);
 
-  // Private Key Normalization (Preserved, unchanged)
+  // Private Key Normalization (Supports multi-line, escaped newlines, and surrounding quotes)
   const privateKey = rawPrivateKey
-    ? rawPrivateKey.replace(/^["'](.*)["']$/, '$1').replace(/\\n/g, '\n').trim()
+    ? rawPrivateKey.replace(/^["']([\s\S]*)["']$/, '$1').replace(/\\n/g, '\n').trim()
     : '';
 
   // Safe Key Diagnostics
