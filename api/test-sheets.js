@@ -23,14 +23,38 @@ function sanitizeSecret(text) {
              .replace(/eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g, '[REDACTED_JWT_TOKEN]');
 }
 
+function verifyAdminAuth(req) {
+  const secretKey = process.env.ADMIN_SECRET_KEY;
+  if (!secretKey) {
+    return { valid: false, error: 'ADMIN_SECRET_KEY_NOT_SET' };
+  }
+  const providedSecret = req.headers['x-admin-secret'] || (req.query && req.query.secret);
+  if (providedSecret === secretKey) {
+    return { valid: true };
+  }
+  return { valid: false, error: 'UNAUTHORIZED' };
+}
+
 module.exports = async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-secret');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // Parse Query
+  const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  req.query = Object.fromEntries(parsedUrl.searchParams.entries());
+
+  const authCheck = verifyAdminAuth(req);
+  if (!authCheck.valid) {
+    if (authCheck.error === 'ADMIN_SECRET_KEY_NOT_SET') {
+      return res.status(500).json({ error: 'Server misconfiguration: ADMIN_SECRET_KEY environment variable is not configured.' });
+    }
+    return res.status(401).json({ error: 'Unauthorized: Invalid or missing admin secret.' });
   }
 
   // Resolve Env Variables (Support standard naming variations)
