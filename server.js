@@ -26,6 +26,11 @@ const enquiryHandler = require('./api/enquiry');
 const supportHandler = require('./api/support');
 const testSheetsHandler = require('./api/test-sheets');
 const servicesHandler = require('./api/services');
+const slotsHandler = require('./api/slots');
+const createOrderHandler = require('./api/create-order');
+const verifyPaymentHandler = require('./api/verify-payment');
+const webhookRazorpayHandler = require('./api/webhook-razorpay');
+const adminBookingsHandler = require('./api/admin/bookings');
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -45,53 +50,30 @@ const server = http.createServer((req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = parsedUrl.pathname;
 
+  // Helper for processing POST/GET requests to Vercel-style handlers
+  const handleApi = (handler) => {
+    if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', () => {
+        req.body = body;
+        handler(req, createResWrapper(res));
+      });
+    } else {
+      handler(req, createResWrapper(res));
+    }
+  };
+
   // Handle Serverless API Routes
-  if (pathname === '/api/enquiry') {
-    if (req.method === 'POST') {
-      let body = '';
-      req.on('data', chunk => body += chunk);
-      req.on('end', () => {
-        req.body = body;
-        enquiryHandler(req, createResWrapper(res));
-      });
-    } else {
-      enquiryHandler(req, createResWrapper(res));
-    }
-    return;
-  }
-
-  if (pathname === '/api/support') {
-    if (req.method === 'POST') {
-      let body = '';
-      req.on('data', chunk => body += chunk);
-      req.on('end', () => {
-        req.body = body;
-        supportHandler(req, createResWrapper(res));
-      });
-    } else {
-      supportHandler(req, createResWrapper(res));
-    }
-    return;
-  }
-
-  if (pathname === '/api/test-sheets') {
-    if (req.method === 'POST') {
-      let body = '';
-      req.on('data', chunk => body += chunk);
-      req.on('end', () => {
-        req.body = body;
-        testSheetsHandler(req, createResWrapper(res));
-      });
-    } else {
-      testSheetsHandler(req, createResWrapper(res));
-    }
-    return;
-  }
-
-  if (pathname === '/api/services') {
-    servicesHandler(req, createResWrapper(res));
-    return;
-  }
+  if (pathname === '/api/enquiry') return handleApi(enquiryHandler);
+  if (pathname === '/api/support') return handleApi(supportHandler);
+  if (pathname === '/api/test-sheets') return handleApi(testSheetsHandler);
+  if (pathname === '/api/services') return handleApi(servicesHandler);
+  if (pathname === '/api/slots') return handleApi(slotsHandler);
+  if (pathname === '/api/create-order') return handleApi(createOrderHandler);
+  if (pathname === '/api/verify-payment') return handleApi(verifyPaymentHandler);
+  if (pathname === '/api/webhook-razorpay') return handleApi(webhookRazorpayHandler);
+  if (pathname === '/api/admin/bookings') return handleApi(adminBookingsHandler);
 
   // Handle Static File Serving with Clean URLs Support
   let filePath = path.join(__dirname, pathname === '/' ? 'index.html' : pathname);

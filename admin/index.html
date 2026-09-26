@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REVA Health — Admin Dashboard</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); line-height: 1.5; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    .header h1 { font-size: 1.5rem; color: var(--primary-dark); }
+    .auth-box { display: flex; gap: 10px; align-items: center; }
+    input[type="password"], input[type="text"] { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; width: 220px; }
+    button { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: var(--primary-dark); }
+    button.btn-warning { background: var(--warning); }
+    button.btn-warning:hover { background: #b45309; }
+    button.btn-secondary { background: #94a3b8; }
+    button.btn-secondary:hover { background: #64748b; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .stat-card { background: var(--card-bg); padding: 15px 20px; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .stat-card .label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+    .stat-card .value { font-size: 1.6rem; font-weight: 700; color: var(--text); margin-top: 5px; }
+
+    .section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+
+    .table-container { background: var(--card-bg); border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; margin-bottom: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { background: #f1f5f9; font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fafc; }
+
+    .badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+    .badge-paid { background: #dcfce7; color: #15803d; }
+    .badge-pending { background: #fef3c7; color: #b45309; }
+    .badge-confirmed { background: #e0f2fe; color: #0369a1; }
+    .badge-failed { background: #fee2e2; color: #b91c1c; }
+
+    .action-btn { padding: 4px 10px; font-size: 0.75rem; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #ffffff; border-radius: 50%; border-top-color: transparent; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 5px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: #0f172a; color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; display: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>🏥 REVA Health — Admin Dashboard</h1>
+    <div class="auth-box">
+      <input type="password" id="adminSecret" placeholder="Admin Secret Key" value="reva-admin-secret-2026">
+      <button onclick="loadDashboard()">Refresh Data</button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="label">Total Bookings</div>
+      <div class="value" id="statBookings">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Total Payments</div>
+      <div class="value" id="statPayments">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Pending Calendar Sync</div>
+      <div class="value" id="statPendingSync" style="color: var(--warning);">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Total Revenue</div>
+      <div class="value" id="statRevenue" style="color: var(--success);">₹0</div>
+    </div>
+  </div>
+
+  <div class="section-title">
+    <span>Appointments & Bookings</span>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Booking ID</th>
+          <th>Patient Name</th>
+          <th>Phone</th>
+          <th>Service</th>
+          <th>Amount</th>
+          <th>Date & Time</th>
+          <th>Payment</th>
+          <th>Appt Status</th>
+          <th>Calendar Event</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="bookingsTable">
+        <tr><td colspan="10" style="text-align: center; color: var(--text-muted);">Loading bookings data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-title">
+    <span>Payments & Transactions</span>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Payment ID</th>
+          <th>Booking ID</th>
+          <th>Razorpay ID</th>
+          <th>Amount</th>
+          <th>Currency</th>
+          <th>Status</th>
+          <th>Method</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody id="paymentsTable">
+        <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading payments data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const secretInput = document.getElementById('adminSecret');
+    const savedSecret = localStorage.getItem('reva_admin_secret');
+    if (savedSecret) secretInput.value = savedSecret;
+
+    secretInput.addEventListener('change', () => {
+      localStorage.setItem('reva_admin_secret', secretInput.value);
+    });
+
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.style.background = isError ? '#dc2626' : '#0f172a';
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 4000);
+    }
+
+    async function loadDashboard() {
+      const secret = secretInput.value.trim();
+      if (!secret) {
+        showToast('Please enter Admin Secret Key', true);
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/bookings', {
+          headers: { 'x-admin-secret': secret }
+        });
+
+        if (res.status === 401) {
+          showToast('Unauthorized: Incorrect Secret Key', true);
+          return;
+        }
+
+        const data = await res.json();
+        if (!data.success) {
+          showToast(data.error || 'Failed to fetch data', true);
+          return;
+        }
+
+        renderBookings(data.bookings || []);
+        renderPayments(data.payments || []);
+        updateStats(data.bookings || [], data.payments || []);
+
+      } catch (err) {
+        showToast('Network error loading dashboard', true);
+        console.error(err);
+      }
+    }
+
+    function updateStats(bookings, payments) {
+      document.getElementById('statBookings').textContent = bookings.length;
+      document.getElementById('statPayments').textContent = payments.length;
+
+      const pendingCount = bookings.filter(b => b.appointment_status === 'CONFIRMATION_PENDING').length;
+      document.getElementById('statPendingSync').textContent = pendingCount;
+
+      const totalRev = payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+      document.getElementById('statRevenue').textContent = `₹${totalRev.toLocaleString()}`;
+    }
+
+    function renderBookings(bookings) {
+      const tbody = document.getElementById('bookingsTable');
+      if (bookings.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-muted);">No bookings recorded yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = bookings.map(b => {
+        const isPendingSync = b.appointment_status === 'CONFIRMATION_PENDING';
+        const isPaid = b.payment_status === 'PAID';
+        
+        let apptBadgeClass = 'badge-pending';
+        if (b.appointment_status === 'CONFIRMED') apptBadgeClass = 'badge-confirmed';
+        if (b.appointment_status === 'CANCELLED' || b.appointment_status === 'SLOT_CONFLICT_CANCELLED') apptBadgeClass = 'badge-failed';
+
+        let payBadgeClass = isPaid ? 'badge-paid' : 'badge-pending';
+
+        return `
+          <tr>
+            <td><strong>${escapeHtml(b.booking_id)}</strong></td>
+            <td>${escapeHtml(b.patient_name || '-')}</td>
+            <td>${escapeHtml(b.phone_number || '-')}</td>
+            <td>${escapeHtml(b.service_name || '-')}</td>
+            <td>₹${escapeHtml(b.amount || '-')}</td>
+            <td>${escapeHtml(b.appointment_date)} ${escapeHtml(b.appointment_time)}</td>
+            <td><span class="badge ${payBadgeClass}">${escapeHtml(b.payment_status || 'PENDING')}</span></td>
+            <td><span class="badge ${apptBadgeClass}">${escapeHtml(b.appointment_status || 'REQUESTED')}</span></td>
+            <td>${b.calendar_event_id ? '<code>' + escapeHtml(b.calendar_event_id.substring(0, 15)) + '...</code>' : '<span style="color:var(--text-muted)">-</span>'}</td>
+            <td>
+              ${isPendingSync ? `<button class="action-btn btn-warning" onclick="retrySync('${escapeHtml(b.booking_id)}')">Retry Sync</button>` : ''}
+              ${!isPendingSync && b.appointment_status !== 'CONFIRMED' ? `<button class="action-btn btn-secondary" onclick="manualConfirm('${escapeHtml(b.booking_id)}')">Confirm</button>` : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderPayments(payments) {
+      const tbody = document.getElementById('paymentsTable');
+      if (payments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No payments recorded yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = payments.map(p => `
+        <tr>
+          <td><strong>${escapeHtml(p.payment_id)}</strong></td>
+          <td>${escapeHtml(p.booking_id)}</td>
+          <td><code>${escapeHtml(p.razorpay_payment_id || '-')}</code></td>
+          <td>₹${escapeHtml(p.amount)}</td>
+          <td>${escapeHtml(p.currency)}</td>
+          <td><span class="badge badge-paid">${escapeHtml(p.status)}</span></td>
+          <td>${escapeHtml(p.method || 'online')}</td>
+          <td>${escapeHtml(p.created_at)}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function retrySync(bookingId) {
+      const secret = secretInput.value.trim();
+      showToast(`Retrying Calendar sync for ${bookingId}...`);
+      try {
+        const res = await fetch('/api/admin/bookings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+          body: JSON.stringify({ action: 'retry_calendar_sync', bookingId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Success! Calendar event synced: ${data.calendarEventId}`);
+          loadDashboard();
+        } else {
+          showToast(data.error || 'Sync failed', true);
+        }
+      } catch (err) {
+        showToast('Error executing retry sync', true);
+      }
+    }
+
+    async function manualConfirm(bookingId) {
+      const secret = secretInput.value.trim();
+      showToast(`Confirming booking ${bookingId}...`);
+      try {
+        const res = await fetch('/api/admin/bookings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+          body: JSON.stringify({ action: 'update_status', bookingId, appointmentStatus: 'CONFIRMED', paymentStatus: 'PAID' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Booking ${bookingId} confirmed.`);
+          loadDashboard();
+        } else {
+          showToast(data.error || 'Update failed', true);
+        }
+      } catch (err) {
+        showToast('Error confirming booking', true);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Initial Load
+    window.addEventListener('DOMContentLoaded', loadDashboard);
+  </script>
+</body>
+</html>
