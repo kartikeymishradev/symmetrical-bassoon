@@ -18,6 +18,7 @@ const { verifyPaymentSignature } = require('../lib/razorpay');
 const { createAppointmentEvent } = require('../lib/calendar');
 const { appendPayment, updateBookingPaymentStatus, updateBookingCalendarDetails, updateBookingTelegramStatus, isPaymentRecorded } = require('../lib/sheets');
 const { sendWhatsAppConfirmation } = require('../lib/whatsapp');
+const { checkRateLimit } = require('../lib/ratelimit');
 
 module.exports = async function handler(req, res) {
   // CORS Headers
@@ -31,6 +32,12 @@ module.exports = async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  // Rate Limiting (10 requests per minute per IP)
+  const rateCheck = checkRateLimit(req, 10, 60 * 1000);
+  if (rateCheck.limited) {
+    return res.status(429).json({ error: `Too many payment verification attempts. Please wait ${rateCheck.resetInSec} seconds before retrying.` });
   }
 
   try {
