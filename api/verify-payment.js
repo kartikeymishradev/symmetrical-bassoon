@@ -16,7 +16,7 @@
 const https = require('https');
 const { verifyPaymentSignature } = require('../lib/razorpay');
 const { createAppointmentEvent } = require('../lib/calendar');
-const { appendPayment, updateBookingPaymentStatus, updateBookingCalendarDetails, updateBookingTelegramStatus, isPaymentRecorded } = require('../lib/sheets');
+const { appendPayment, updateBookingPaymentStatus, updateBookingCalendarDetails, updateBookingTelegramStatus, isPaymentRecorded, getAllBookings } = require('../lib/sheets');
 const { sendWhatsAppConfirmation } = require('../lib/whatsapp');
 const { checkRateLimit } = require('../lib/ratelimit');
 
@@ -61,7 +61,62 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Booking ID and Payment ID are required.' });
     }
 
-    // 1. Idempotency Check (Prevent duplicate payments or duplicate calendar events)
+    // 1. Check if booking was cancelled due to slot conflict
+    try {
+      const { bookings } = await getAllBookings();
+      const existingBooking = (bookings || []).find(b => b.booking_id === bookingId);
+      if (existingBooking && existingBooking.appointment_status === 'SLOT_CONFLICT_CANCELLED') {
+        // Send Telegram admin alert for manual refund processing if payment ID is present
+        if (razorpay_payment_id) {
+          const token = process.env.TELEGRAM_BOT_TOKEN;
+          const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+          const isPlaceholder = !token || !chatId || token.includes('your_') || token.includes('temporary_') || chatId.includes('your_');
+
+          if (!isPlaceholder) {
+            const messageText = `⚠️ <b>[ACTION REQUIRED: MANUAL REFUND]</b>\n` +
+              `Payment attempted on CANCELLED booking slot!\n\n` +
+              `Booking ID: ${bookingId}\n` +
+              `Patient: ${name || existingBooking.patient_name || 'N/A'}\n` +
+              `Phone: ${phone || existingBooking.phone_number || 'N/A'}\n` +
+              `Razorpay Payment ID: <code>${razorpay_payment_id}</code>\n` +
+              `Razorpay Order ID: <code>${razorpay_order_id || 'N/A'}</code>\n` +
+              `Amount: ₹${amount || existingBooking.amount || 400}\n` +
+              `Reason: SLOT_CONFLICT_CANCELLED\n\n` +
+              `<i>Please verify Razorpay dashboard and issue manual refund if payment was captured.</i>`;
+
+            const telegramData = JSON.stringify({
+              chat_id: chatId,
+              text: messageText,
+              parse_mode: 'HTML'
+            });
+
+            const options = {
+              hostname: 'api.telegram.org',
+              port: 443,
+              path: `/bot${token}/sendMessage`,
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(telegramData)
+              }
+            };
+
+            const tgReq = https.request(options);
+            tgReq.on('error', (e) => console.error('Telegram refund alert error:', e.message));
+            tgReq.write(telegramData);
+            tgReq.end();
+          }
+        }
+
+        return res.status(409).json({
+          error: 'This booking slot was already reserved by another patient. Please contact support for a refund if payment was captured.'
+        });
+      }
+    } catch (checkCancelErr) {
+      console.warn('Error checking cancelled booking status:', checkCancelErr.message);
+    }
+
+    // 2. Idempotency Check (Prevent duplicate payments or duplicate calendar events)
     const alreadyProcessed = await isPaymentRecorded(razorpay_payment_id, bookingId);
     if (alreadyProcessed) {
       return res.status(200).json({
