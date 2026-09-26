@@ -209,6 +209,12 @@
         return;
       }
 
+      const cleanPhoneDigits = phone.replace(/[^0-9]/g, '');
+      if (cleanPhoneDigits.length !== 10) {
+        alert('Please enter a valid 10-digit mobile phone number (e.g. 9876543210).');
+        return;
+      }
+
       if (!time) {
         alert('Please select an available time slot.');
         return;

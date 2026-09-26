@@ -102,10 +102,15 @@ module.exports = async function handler(req, res) {
               }
             };
 
-            const tgReq = https.request(options);
-            tgReq.on('error', (e) => console.error('Telegram refund alert error:', e.message));
-            tgReq.write(telegramData);
-            tgReq.end();
+            await new Promise((resolve) => {
+              const tgReq = https.request(options, () => resolve());
+              tgReq.on('error', (e) => {
+                console.error('Telegram refund alert error:', e.message);
+                resolve();
+              });
+              tgReq.write(telegramData);
+              tgReq.end();
+            });
           }
         }
 
@@ -259,14 +264,23 @@ module.exports = async function handler(req, res) {
         }
       };
 
-      const tgReq = https.request(options, (tgRes) => {
-        if (tgRes.statusCode === 200) {
-          updateBookingTelegramStatus(bookingId, 'SENT');
-        }
+      await new Promise((resolve) => {
+        const tgReq = https.request(options, (tgRes) => {
+          if (tgRes.statusCode === 200) {
+            updateBookingTelegramStatus(bookingId, 'SENT')
+              .then(() => resolve())
+              .catch(() => resolve());
+          } else {
+            resolve();
+          }
+        });
+        tgReq.on('error', (e) => {
+          console.error('Telegram verify notification error:', e.message);
+          resolve();
+        });
+        tgReq.write(telegramData);
+        tgReq.end();
       });
-      tgReq.on('error', (e) => console.error('Telegram verify notification error:', e.message));
-      tgReq.write(telegramData);
-      tgReq.end();
     }
 
     // 7. Invoke WhatsApp confirmation hook
