@@ -47,8 +47,8 @@ module.exports = async function handler(req, res) {
     const cleanTime = typeof time === 'string' ? time.trim() : '';
     const cleanNotes = typeof notes === 'string' ? notes.trim() : '';
 
-    if (!cleanName || !cleanPhone) {
-      return res.status(400).json({ error: 'Name and phone number are required.' });
+    if (!cleanName || !cleanPhone || !cleanDate || !cleanTime) {
+      return res.status(400).json({ error: 'Name, phone, date, and time slot are required.' });
     }
 
     const timestamp = new Date().toISOString();

@@ -62,9 +62,10 @@ module.exports = async function handler(req, res) {
     }
 
     // 1. Check if booking was cancelled due to slot conflict
+    let existingBooking = null;
     try {
       const { bookings } = await getAllBookings();
-      const existingBooking = (bookings || []).find(b => b.booking_id === bookingId);
+      existingBooking = (bookings || []).find(b => b.booking_id === bookingId);
       if (existingBooking && existingBooking.appointment_status === 'SLOT_CONFLICT_CANCELLED') {
         // Send Telegram admin alert for manual refund processing if payment ID is present
         if (razorpay_payment_id) {
@@ -163,13 +164,18 @@ module.exports = async function handler(req, res) {
     }
 
     // 3. Append Transaction to 'Payments' tab (11 columns A:K, RAW)
+    // Use authoritative amount from Bookings sheet record created during create-order (never trust client input)
+    const authoritativeAmount = (existingBooking && existingBooking.amount && !isNaN(parseFloat(existingBooking.amount)))
+      ? parseFloat(existingBooking.amount)
+      : 400;
+
     const paymentId = `PAY-${Date.now().toString(36).toUpperCase()}`;
     const paymentRow = [
       paymentId,
       bookingId,
       razorpay_payment_id,
       razorpay_order_id || '',
-      amount || 400,
+      authoritativeAmount,
       'INR',
       'captured',
       'online',
