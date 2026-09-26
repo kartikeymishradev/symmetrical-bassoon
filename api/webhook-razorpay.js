@@ -19,13 +19,15 @@ module.exports = async function handler(req, res) {
     const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
     const signature = req.headers['x-razorpay-signature'];
 
-    // Verify webhook signature if webhook secret is configured
+    // Verify webhook signature (RAZORPAY_WEBHOOK_SECRET mandatory)
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-    if (webhookSecret) {
-      const isValid = verifyWebhookSignature(rawBody, signature, webhookSecret);
-      if (!isValid) {
-        return res.status(400).json({ error: 'Invalid webhook signature.' });
-      }
+    if (!webhookSecret) {
+      return res.status(500).json({ error: 'Webhook not configured: RAZORPAY_WEBHOOK_SECRET environment variable is missing.' });
+    }
+
+    const isValid = verifyWebhookSignature(rawBody, signature, webhookSecret);
+    if (!isValid) {
+      return res.status(400).json({ error: 'Invalid webhook signature.' });
     }
 
     const payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};

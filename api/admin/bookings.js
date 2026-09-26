@@ -13,9 +13,15 @@ const { createAppointmentEvent } = require('../../lib/calendar');
 const https = require('https');
 
 function verifyAdminAuth(req) {
-  const secretKey = process.env.ADMIN_SECRET_KEY || 'reva-admin-secret-2026';
+  const secretKey = process.env.ADMIN_SECRET_KEY;
+  if (!secretKey) {
+    return { valid: false, error: 'ADMIN_SECRET_KEY_NOT_SET' };
+  }
   const providedSecret = req.headers['x-admin-secret'] || (req.query && req.query.secret);
-  return providedSecret === secretKey;
+  if (providedSecret === secretKey) {
+    return { valid: true };
+  }
+  return { valid: false, error: 'UNAUTHORIZED' };
 }
 
 module.exports = async function handler(req, res) {
@@ -31,7 +37,11 @@ module.exports = async function handler(req, res) {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   req.query = Object.fromEntries(parsedUrl.searchParams.entries());
 
-  if (!verifyAdminAuth(req)) {
+  const authCheck = verifyAdminAuth(req);
+  if (!authCheck.valid) {
+    if (authCheck.error === 'ADMIN_SECRET_KEY_NOT_SET') {
+      return res.status(500).json({ error: 'Server misconfiguration: ADMIN_SECRET_KEY environment variable is not configured.' });
+    }
     return res.status(401).json({ error: 'Unauthorized: Invalid or missing admin secret.' });
   }
 
