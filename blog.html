@@ -87,7 +87,8 @@
           <li><a href="/#philosophy" class="nav-link">Philosophy</a></li>
           <li><a href="/#doctor" class="nav-link">Doctor</a></li>
           <li><a href="/#conditions" class="nav-link">Conditions</a></li>
-          <li><a href="/#packages" class="nav-link">Packages</a></li>
+          <li><a href="/#packages" class="nav-link">Plans</a></li>
+          <li><a href="/#journey" class="nav-link">Patient Journey</a></li>
           <li><a href="/blog" class="nav-link active" aria-current="page">Blog</a></li>
         </ul>
       </nav>
@@ -117,10 +118,11 @@
       <ul class="mobile-nav-list">
         <li><a href="/" class="mobile-nav-link">Home</a></li>
         <li><a href="/#philosophy" class="mobile-nav-link">Philosophy</a></li>
-        <li><a href="/#doctor" class="mobile-nav-link">Doctor Profile</a></li>
+        <li><a href="/#doctor" class="mobile-nav-link">Doctor</a></li>
         <li><a href="/#conditions" class="mobile-nav-link">Conditions</a></li>
-        <li><a href="/#packages" class="mobile-nav-link">Packages</a></li>
-        <li><a href="/blog" class="mobile-nav-link">Blog & Medical Journal</a></li>
+        <li><a href="/#packages" class="mobile-nav-link">Plans</a></li>
+        <li><a href="/#journey" class="mobile-nav-link">Patient Journey</a></li>
+        <li><a href="/blog" class="mobile-nav-link active">Blog</a></li>
       </ul>
       <div class="mobile-nav-footer">
         <button type="button" class="btn btn-primary btn-block js-book-modal-trigger" data-package="Doctor Consultation">Book Consultation</button>
@@ -312,8 +314,21 @@
             </select>
           </div>
           <div class="form-group">
+            <label for="form-email" class="form-label">Email Address (For Calendar Invite)</label>
+            <input type="email" id="form-email" class="form-control" placeholder="e.g. ramesh@example.com">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
             <label for="form-date" class="form-label">Preferred Date</label>
             <input type="date" id="form-date" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="form-time" class="form-label">Available Time Slot</label>
+            <select id="form-time" class="form-control" required>
+              <option value="">Loading Slots...</option>
+            </select>
           </div>
         </div>
 
@@ -322,9 +337,11 @@
           <textarea id="form-notes" class="form-control" rows="2" placeholder="Mention any recent blood test results or primary dietary preferences"></textarea>
         </div>
 
+        <div id="booking-error-alert" class="widget-status error" style="display: none; margin-bottom: 15px;" aria-live="polite"></div>
+
         <div class="modal-footer">
           <button type="submit" id="booking-submit-btn" class="btn btn-accent btn-block">
-            <span>Submit Consultation Request</span>
+            <span>Book & Pay Consultation Slot</span>
           </button>
         </div>
       </form>
@@ -332,14 +349,27 @@
       <!-- Confirmation View -->
       <div id="booking-confirmation" class="modal-body confirmation-panel" style="display: none;">
         <div class="confirmation-icon">[+]</div>
-        <h3 class="confirmation-heading">Request Recorded</h3>
-        <p class="confirmation-sub">Your consultation appointment request has been transmitted via serverless endpoint.</p>
+        <h3 class="confirmation-heading">Appointment Confirmed</h3>
+        <p class="confirmation-sub">Your consultation appointment has been confirmed and locked in our calendar.</p>
         
         <div class="summary-box">
-          <div class="summary-row"><strong>Name:</strong> <span id="summary-name"></span></div>
+          <div class="summary-row"><strong>Booking ID:</strong> <span id="summary-booking-id"></span></div>
+          <div class="summary-row"><strong>Payment ID:</strong> <span id="summary-payment-id"></span></div>
+          <div class="summary-row"><strong>Patient:</strong> <span id="summary-name"></span></div>
           <div class="summary-row"><strong>Phone:</strong> <span id="summary-phone"></span></div>
           <div class="summary-row"><strong>Selected Plan:</strong> <span id="summary-package"></span></div>
-          <div class="summary-row"><strong>Preferred Date:</strong> <span id="summary-date"></span></div>
+          <div class="summary-row"><strong>Date & Time:</strong> <span id="summary-datetime"></span></div>
+          <div class="summary-row"><strong>Status:</strong> <span id="summary-status" class="badge" style="background:#10b981; color:#fff; padding:2px 8px; border-radius:4px; font-weight:600;">CONFIRMED</span></div>
+        </div>
+
+        <div id="summary-meet-container" style="display: none; margin: 15px 0;">
+          <a id="summary-meet-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-accent btn-block" style="text-decoration: none; text-align: center;">
+            Join Google Meet Consultation
+          </a>
+        </div>
+
+        <div id="summary-notice" class="system-notice">
+          <strong>Confirmation Sent:</strong> Details have been transmitted via WhatsApp and Google Calendar invitation.
         </div>
 
         <button class="btn btn-outline btn-block js-modal-close">Close</button>

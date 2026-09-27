@@ -6,6 +6,128 @@
 (function () {
   'use strict';
 
+  // Shared Booking Modal Auto-Injector Component
+  function ensureBookingModalExists() {
+    if (document.getElementById('booking-modal')) return;
+    const modalDiv = document.createElement('div');
+    modalDiv.id = 'booking-modal';
+    modalDiv.className = 'modal-backdrop';
+    modalDiv.setAttribute('aria-hidden', 'true');
+    modalDiv.setAttribute('role', 'dialog');
+    modalDiv.setAttribute('aria-labelledby', 'modal-title');
+    modalDiv.setAttribute('aria-modal', 'true');
+    modalDiv.innerHTML = `
+    <div class="modal-container">
+      <div class="modal-header">
+        <div>
+          <span class="meta-label">REVA HEALTH CONSULTATION</span>
+          <h2 id="modal-title" class="modal-title">Book Consultation</h2>
+        </div>
+        <button class="modal-close js-modal-close" aria-label="Close modal">&times;</button>
+      </div>
+
+      <!-- Form View -->
+      <form id="booking-form" class="modal-body">
+        <div class="form-group">
+          <label for="form-package" class="form-label">Selected Plan</label>
+          <select id="form-package" class="form-control" required>
+            <option value="Doctor Consultation">Doctor Consultation (₹400)</option>
+            <option value="Nutrition Consultation">Nutrition Consultation (₹299)</option>
+            <option value="Personalised Diet Plan">Personalised Diet Plan (₹499)</option>
+            <option value="Diet + Workout Plan">Diet + Workout Plan (₹699)</option>
+            <option value="Doctor + Nutrition Combo Package">Doctor + Nutrition Combo Package (₹999) — BEST SELLER</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-name" class="form-label">Your Name</label>
+            <input type="text" id="form-name" class="form-control" placeholder="e.g. Ramesh Kumar" required>
+          </div>
+          <div class="form-group">
+            <label for="form-phone" class="form-label">Phone / WhatsApp Number</label>
+            <input type="tel" id="form-phone" class="form-control" autocomplete="tel" pattern="[0-9]{10}" maxlength="10" placeholder="e.g. 9876543210" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-condition" class="form-label">Primary Health Focus</label>
+            <select id="form-condition" class="form-control">
+              <option value="PCOS / PCOD">PCOS / PCOD</option>
+              <option value="Type 2 Diabetes">Type 2 Diabetes</option>
+              <option value="Weight Loss">Weight Loss</option>
+              <option value="Healthy Weight Gain">Healthy Weight Gain</option>
+              <option value="Thyroid + Weight Management">Thyroid + Weight Management</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="form-email" class="form-label">Email Address (For Calendar Invite)</label>
+            <input type="email" id="form-email" class="form-control" placeholder="e.g. ramesh@example.com">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-date" class="form-label">Preferred Date</label>
+            <input type="date" id="form-date" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="form-time" class="form-label">Available Time Slot</label>
+            <select id="form-time" class="form-control" required>
+              <option value="">Loading Slots...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="form-notes" class="form-label">Recent Blood Reports / Notes (Optional)</label>
+          <textarea id="form-notes" class="form-control" rows="2" placeholder="Mention any recent blood test results or primary dietary preferences"></textarea>
+        </div>
+
+        <div id="booking-error-alert" class="widget-status error" style="display: none; margin-bottom: 15px;" aria-live="polite"></div>
+
+        <div class="modal-footer">
+          <button type="submit" id="booking-submit-btn" class="btn btn-accent btn-block">
+            <span>Book & Pay Consultation Slot</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Confirmation View -->
+      <div id="booking-confirmation" class="modal-body confirmation-panel" style="display: none;">
+        <div class="confirmation-icon">[+]</div>
+        <h3 class="confirmation-heading">Appointment Confirmed</h3>
+        <p class="confirmation-sub">Your consultation appointment has been confirmed and locked in our calendar.</p>
+        
+        <div class="summary-box">
+          <div class="summary-row"><strong>Booking ID:</strong> <span id="summary-booking-id"></span></div>
+          <div class="summary-row"><strong>Payment ID:</strong> <span id="summary-payment-id"></span></div>
+          <div class="summary-row"><strong>Patient:</strong> <span id="summary-name"></span></div>
+          <div class="summary-row"><strong>Phone:</strong> <span id="summary-phone"></span></div>
+          <div class="summary-row"><strong>Selected Plan:</strong> <span id="summary-package"></span></div>
+          <div class="summary-row"><strong>Date & Time:</strong> <span id="summary-datetime"></span></div>
+          <div class="summary-row"><strong>Status:</strong> <span id="summary-status" class="badge" style="background:#10b981; color:#fff; padding:2px 8px; border-radius:4px; font-weight:600;">CONFIRMED</span></div>
+        </div>
+
+        <div id="summary-meet-container" style="display: none; margin: 15px 0;">
+          <a id="summary-meet-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-accent btn-block" style="text-decoration: none; text-align: center;">
+            Join Google Meet Consultation
+          </a>
+        </div>
+
+        <div id="summary-notice" class="system-notice">
+          <strong>Confirmation Sent:</strong> Details have been transmitted via WhatsApp and Google Calendar invitation.
+        </div>
+
+        <button class="btn btn-outline btn-block js-modal-close">Close</button>
+      </div>
+    </div>`;
+    document.body.appendChild(modalDiv);
+  }
+
+  ensureBookingModalExists();
+
   // DOM Elements: Header & Navigation (with fallback support)
   const mobileNavToggle = document.querySelector('.mobile-nav-toggle') || document.getElementById('mobileNavToggle');
   const mobileNavDrawer = document.getElementById('mobile-nav-drawer') || document.getElementById('mobileDrawer') || document.querySelector('.mobile-drawer');
