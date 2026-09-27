@@ -27,8 +27,8 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  // Rate Limiting (10 requests per minute per IP)
-  const rateCheck = checkRateLimit(req, 10, 60 * 1000);
+  // Rate Limiting (5 requests per minute per IP)
+  const rateCheck = checkRateLimit(req, res, 5, 60 * 1000);
   if (rateCheck.limited) {
     return res.status(429).json({ error: `Too many order creation attempts. Please wait ${rateCheck.resetInSec} seconds before retrying.` });
   }

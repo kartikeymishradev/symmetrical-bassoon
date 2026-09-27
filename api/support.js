@@ -8,6 +8,7 @@
 
 const https = require('https');
 const { setCorsHeaders } = require('../lib/cors');
+const { checkRateLimit } = require('../lib/ratelimit');
 
 module.exports = async function handler(req, res) {
   // Dynamic CORS Headers
@@ -19,6 +20,12 @@ module.exports = async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  // Rate Limiting (15 requests per minute per IP)
+  const rateCheck = checkRateLimit(req, res, 15, 60 * 1000);
+  if (rateCheck.limited) {
+    return res.status(429).json({ error: `Too many support messages sent. Please wait ${rateCheck.resetInSec} seconds before retrying.` });
   }
 
   try {

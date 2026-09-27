@@ -11,6 +11,7 @@
 const { getAllBookings, getAllPayments, updateBookingCalendarDetails, updateBookingPaymentStatus, updateBookingTelegramStatus } = require('../../lib/sheets');
 const { createAppointmentEvent } = require('../../lib/calendar');
 const { setCorsHeaders } = require('../../lib/cors');
+const { checkRateLimit } = require('../../lib/ratelimit');
 const https = require('https');
 
 function verifyAdminAuth(req) {
@@ -31,6 +32,12 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // Rate Limiting (20 requests per minute per IP)
+  const rateCheck = checkRateLimit(req, res, 20, 60 * 1000);
+  if (rateCheck.limited) {
+    return res.status(429).json({ error: `Too many admin API requests. Please wait ${rateCheck.resetInSec} seconds before retrying.` });
   }
 
   // Parse Query

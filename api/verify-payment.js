@@ -34,7 +34,7 @@ module.exports = async function handler(req, res) {
   }
 
   // Rate Limiting (10 requests per minute per IP)
-  const rateCheck = checkRateLimit(req, 10, 60 * 1000);
+  const rateCheck = checkRateLimit(req, res, 10, 60 * 1000);
   if (rateCheck.limited) {
     return res.status(429).json({ error: `Too many payment verification attempts. Please wait ${rateCheck.resetInSec} seconds before retrying.` });
   }
