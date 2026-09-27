@@ -93,7 +93,7 @@
       </nav>
 
       <div class="header-actions">
-        <button type="button" class="btn btn-secondary btn-sm js-book-modal-trigger" data-package="Doctor Consultation (₹400)">Book Consultation</button>
+        <button type="button" class="btn btn-secondary btn-sm js-book-modal-trigger" data-package="Doctor Consultation">Book Consultation</button>
         <button type="button" class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle navigation drawer" aria-expanded="false">
           <span class="hamburger-line"></span>
           <span class="hamburger-line"></span>
@@ -123,7 +123,7 @@
         <li><a href="/blog" class="mobile-nav-link">Blog & Medical Journal</a></li>
       </ul>
       <div class="mobile-nav-footer">
-        <button type="button" class="btn btn-primary btn-block js-book-modal-trigger" data-package="Doctor Consultation (₹400)">Book Consultation</button>
+        <button type="button" class="btn btn-primary btn-block js-book-modal-trigger" data-package="Doctor Consultation">Book Consultation</button>
       </div>
     </div>
   </header>
@@ -281,11 +281,11 @@
         <div class="form-group">
           <label for="form-package" class="form-label">Selected Plan</label>
           <select id="form-package" class="form-control" required>
-            <option value="Doctor Consultation (₹400)">Doctor Consultation (₹400)</option>
-            <option value="Nutrition Consultation (₹299)">Nutrition Consultation (₹299)</option>
-            <option value="Personalised Diet Plan (₹499)">Personalised Diet Plan (₹499)</option>
-            <option value="Diet + Workout Plan (₹699)">Diet + Workout Plan (₹699)</option>
-            <option value="Doctor + Nutrition Combo Package (₹999)" selected>Doctor + Nutrition Combo Package (₹999) — BEST SELLER</option>
+            <option value="Doctor Consultation">Doctor Consultation (₹400)</option>
+            <option value="Nutrition Consultation">Nutrition Consultation (₹299)</option>
+            <option value="Personalised Diet Plan">Personalised Diet Plan (₹499)</option>
+            <option value="Diet + Workout Plan">Diet + Workout Plan (₹699)</option>
+            <option value="Doctor + Nutrition Combo Package">Doctor + Nutrition Combo Package (₹999) — BEST SELLER</option>
           </select>
         </div>
 
@@ -296,7 +296,7 @@
           </div>
           <div class="form-group">
             <label for="form-phone" class="form-label">Phone / WhatsApp Number</label>
-            <input type="tel" id="form-phone" class="form-control" placeholder="e.g. +91 98765 43210" required>
+            <input type="tel" id="form-phone" class="form-control" autocomplete="tel" pattern="[0-9]{10}" maxlength="10" placeholder="e.g. 9876543210" required>
           </div>
         </div>
 
