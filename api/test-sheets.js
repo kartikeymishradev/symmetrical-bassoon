@@ -8,6 +8,7 @@
  */
 
 const { google } = require('googleapis');
+const { setCorsHeaders } = require('../lib/cors');
 
 function extractSpreadsheetId(input) {
   if (!input) return '';
@@ -36,10 +37,8 @@ function verifyAdminAuth(req) {
 }
 
 module.exports = async function handler(req, res) {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-secret');
+  // Strict Admin CORS Headers (No Wildcard)
+  setCorsHeaders(req, res, { methods: 'GET, POST, OPTIONS', headers: 'Content-Type, x-admin-secret', isAdmin: true });
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();

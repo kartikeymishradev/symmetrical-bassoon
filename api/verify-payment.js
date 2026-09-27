@@ -19,12 +19,11 @@ const { createAppointmentEvent } = require('../lib/calendar');
 const { appendPayment, updateBookingPaymentStatus, updateBookingCalendarDetails, updateBookingTelegramStatus, isPaymentRecorded, getAllBookings } = require('../lib/sheets');
 const { sendWhatsAppConfirmation } = require('../lib/whatsapp');
 const { checkRateLimit } = require('../lib/ratelimit');
+const { setCorsHeaders } = require('../lib/cors');
 
 module.exports = async function handler(req, res) {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // Dynamic CORS Headers
+  setCorsHeaders(req, res, { methods: 'POST, OPTIONS' });
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();

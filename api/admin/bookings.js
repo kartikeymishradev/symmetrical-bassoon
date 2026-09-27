@@ -10,6 +10,7 @@
 
 const { getAllBookings, getAllPayments, updateBookingCalendarDetails, updateBookingPaymentStatus, updateBookingTelegramStatus } = require('../../lib/sheets');
 const { createAppointmentEvent } = require('../../lib/calendar');
+const { setCorsHeaders } = require('../../lib/cors');
 const https = require('https');
 
 function verifyAdminAuth(req) {
@@ -25,9 +26,8 @@ function verifyAdminAuth(req) {
 }
 
 module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-secret');
+  // Strict Admin CORS Headers (No Wildcard)
+  setCorsHeaders(req, res, { methods: 'GET, POST, OPTIONS', headers: 'Content-Type, x-admin-secret', isAdmin: true });
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();

@@ -7,6 +7,7 @@
  */
 
 const { fetchServices } = require('../lib/sheets');
+const { setCorsHeaders } = require('../lib/cors');
 
 const FALLBACK_SERVICES = [
   { service_id: 'SRV-DOC-400', service_name: 'Doctor Consultation', amount: 400, active: true },
@@ -17,10 +18,8 @@ const FALLBACK_SERVICES = [
 ];
 
 module.exports = async function handler(req, res) {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // Dynamic CORS Headers
+  setCorsHeaders(req, res, { methods: 'GET, OPTIONS' });
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
