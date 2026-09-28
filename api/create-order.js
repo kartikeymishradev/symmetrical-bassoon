@@ -14,6 +14,7 @@ const { appendBooking, getServiceAmount, fetchActiveSlotHolds, updateBookingPaym
 const { createRazorpayOrder } = require('../lib/razorpay');
 const { checkRateLimit } = require('../lib/ratelimit');
 const { setCorsHeaders } = require('../lib/cors');
+const { getAvailableSlots } = require('../lib/calendar');
 
 module.exports = async function handler(req, res) {
   // Dynamic CORS Headers
@@ -56,11 +57,25 @@ module.exports = async function handler(req, res) {
     // 1. Initial Slot Availability & Hold Check
     if (cleanDate && cleanTime) {
       const activeHolds = await fetchActiveSlotHolds(cleanDate);
-      const isSlotHeld = activeHolds.some(h => h.time === cleanTime);
+      const slotQuery = await getAvailableSlots(null, cleanDate, 30, activeHolds);
+      const availableSlots = slotQuery.slots || [];
+
+      const isSlotHeld = activeHolds.some(h => (h.time || '').toLowerCase() === cleanTime.toLowerCase());
       if (isSlotHeld) {
         return res.status(409).json({
           error: 'Slot is temporarily held by another patient. Please select a different time.',
           conflict: true
+        });
+      }
+
+      const isValidSlot = availableSlots.some(s => 
+        (s.time12h || '').toLowerCase() === cleanTime.toLowerCase() ||
+        (s.slotStart || '') === cleanTime
+      );
+
+      if (!isValidSlot) {
+        return res.status(400).json({
+          error: `Selected time slot "${cleanTime}" is invalid, expired, or outside working hours. Please select a valid available slot.`
         });
       }
     }

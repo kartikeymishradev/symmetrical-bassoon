@@ -170,13 +170,13 @@
         modalTimeSelect.innerHTML = data.slots.map(s => `<option value="${s.time12h}">${s.time12h}</option>`).join('');
         modalTimeSelect.disabled = false;
       } else {
-        modalTimeSelect.innerHTML = '<option value="">No slots available for this date</option>';
+        modalTimeSelect.innerHTML = '<option value="">Is date pe koi slot available nahi hai.</option>';
         modalTimeSelect.disabled = true;
       }
     } catch (err) {
       console.error('Error fetching slots:', err);
-      modalTimeSelect.innerHTML = '<option value="10:00 AM">10:00 AM</option><option value="11:00 AM">11:00 AM</option><option value="04:00 PM">04:00 PM</option>';
-      modalTimeSelect.disabled = false;
+      modalTimeSelect.innerHTML = '<option value="">Slots load nahi ho paaye, kripya dobara try karein.</option>';
+      modalTimeSelect.disabled = true;
     }
   }
 
