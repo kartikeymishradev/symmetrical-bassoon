@@ -81,7 +81,12 @@ module.exports = async function handler(req, res) {
     }
 
     // Resolve numeric amount
-    const numericAmount = await getServiceAmount(cleanPackage, cleanPackage) || 400;
+    let numericAmount;
+    try {
+      numericAmount = await getServiceAmount(cleanPackage, cleanPackage);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
 
     // Create Razorpay Order
     const orderRes = await createRazorpayOrder({
