@@ -24,13 +24,23 @@ const { verifyWebhookSignature } = require('../lib/razorpay');
 const { appendPayment, isPaymentRecorded, updateBookingPaymentStatus, getAllBookings } = require('../lib/sheets');
 const { confirmBooking, TERMINAL_STATUSES } = require('../lib/confirm-booking');
 
-module.exports = async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   try {
-    const rawBody  = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
+    // Read raw body stream for signature verification
+    let rawBody = '';
+    if (typeof req.body === 'string') {
+      // Fallback for local testing via server.js where body might be pre-read
+      rawBody = req.body;
+    } else {
+      for await (const chunk of req) {
+        rawBody += chunk;
+      }
+    }
+    
     const signature = req.headers['x-razorpay-signature'];
 
     // 1. Verify webhook signature
@@ -44,7 +54,13 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid webhook signature.' });
     }
 
-    const payload        = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
+    let payload = {};
+    try {
+      payload = JSON.parse(rawBody);
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid JSON payload.' });
+    }
+
     const event          = payload.event;
     const paymentEntity  = (payload.payload && payload.payload.payment && payload.payload.payment.entity) || {};
 
@@ -139,3 +155,6 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Internal Webhook error' });
   }
 };
+
+module.exports = handler;
+module.exports.config = { api: { bodyParser: false } };
