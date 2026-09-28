@@ -59,7 +59,7 @@ module.exports = async function handler(req, res) {
 
 
     const timestamp = new Date().toISOString();
-    const bookingId = `ENQ-${Date.now().toString(36).toUpperCase()}`;
+    const bookingId = `ENQ-${require('crypto').randomBytes(6).toString('hex').toUpperCase()}`;
 
     // Prefer amount from Services sheet, with fallback to package string extraction
     const amount = await getServiceAmount(cleanPackage, cleanPackage);
@@ -138,15 +138,16 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Format Telegram Message
-    const messageText = `NEW REVA HEALTH ENQUIRY (${bookingId})\n\n` +
-      `Name: ${cleanName}\n` +
-      `Phone: ${cleanPhone}\n` +
-      `Email: ${cleanEmail || 'N/A'}\n` +
-      `Plan Interest: ${cleanPackage || 'General Consultation'}\n` +
-      `Primary Focus: ${cleanCondition || 'N/A'}\n` +
-      `Preferred Date: ${cleanDate || 'N/A'}\n\n` +
-      `Notes:\n${cleanNotes || 'None'}\n\n` +
+    // Format Telegram Message — escape all user input for HTML mode
+    const escHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const messageText = `NEW REVA HEALTH ENQUIRY (${escHtml(bookingId)})\n\n` +
+      `Name: ${escHtml(cleanName)}\n` +
+      `Phone: ${escHtml(cleanPhone)}\n` +
+      `Email: ${escHtml(cleanEmail || 'N/A')}\n` +
+      `Plan Interest: ${escHtml(cleanPackage || 'General Consultation')}\n` +
+      `Primary Focus: ${escHtml(cleanCondition || 'N/A')}\n` +
+      `Preferred Date: ${escHtml(cleanDate || 'N/A')}\n\n` +
+      `Notes:\n${escHtml(cleanNotes || 'None')}\n\n` +
       `Submitted from:\nREVA Health Website`;
 
     const telegramData = JSON.stringify({

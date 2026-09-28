@@ -60,11 +60,12 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Format Telegram Support Message
+    // Format Telegram Support Message — escape all user input for HTML mode
+    const escHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const messageText = `NEW CUSTOMER CARE MESSAGE\n\n` +
-      `Name: ${name || 'Anonymous'}\n` +
-      `Contact: ${contact || 'Not Provided'}\n\n` +
-      `Message:\n${message}\n\n` +
+      `Name: ${escHtml(cleanName || 'Anonymous')}\n` +
+      `Contact: ${escHtml(cleanContact || 'Not Provided')}\n\n` +
+      `Message:\n${escHtml(cleanMessage)}\n\n` +
       `Source:\nREVA Health Customer Care Widget`;
 
     const telegramData = JSON.stringify({
