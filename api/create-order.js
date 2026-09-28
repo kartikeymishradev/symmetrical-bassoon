@@ -63,7 +63,7 @@ module.exports = async function handler(req, res) {
 
 
     const timestamp = new Date().toISOString();
-    const bookingId = `ENQ-${Date.now().toString(36).toUpperCase()}`;
+    const bookingId = `ENQ-${require('crypto').randomBytes(6).toString('hex').toUpperCase()}`;
 
     // 1. Initial Slot Availability & Hold Check
     if (cleanDate && cleanTime) {

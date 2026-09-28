@@ -13,13 +13,14 @@ const { createAppointmentEvent } = require('../../lib/calendar');
 const { setCorsHeaders } = require('../../lib/cors');
 const { checkRateLimit } = require('../../lib/ratelimit');
 const https = require('https');
+const crypto = require('crypto');
 
 function verifyAdminAuth(req) {
   const secretKey = process.env.ADMIN_SECRET_KEY;
   if (!secretKey) {
     return { valid: false, error: 'ADMIN_SECRET_KEY_NOT_SET' };
   }
-  const providedSecret = req.headers['x-admin-secret'] || (req.query && req.query.secret);
+  const providedSecret = req.headers['x-admin-secret'];
   if (providedSecret === secretKey) {
     return { valid: true };
   }
