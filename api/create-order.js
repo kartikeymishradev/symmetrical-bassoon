@@ -171,8 +171,12 @@ module.exports = async function handler(req, res) {
               const holdExpired = updatedMs && (nowMs - updatedMs > holdExpiryMinutes * 60 * 1000);
 
               if (holdExpired) {
-                // Asynchronously mark expired hold as SLOT_EXPIRED (best-effort, non-blocking)
-                updateBookingPaymentStatus(r[0], 'CANCELLED', '', '', 'SLOT_EXPIRED').catch(() => {});
+                // Await expired hold status update before proceeding (ensures Sheets is consistent)
+                try {
+                  await updateBookingPaymentStatus(r[0], 'CANCELLED', '', '', 'SLOT_EXPIRED');
+                } catch (expireErr) {
+                  console.warn(`[WriteGuard] Could not mark expired hold ${r[0]} as SLOT_EXPIRED:`, expireErr.message);
+                }
                 console.log(`[WriteGuard] Skipping expired ${status} hold for booking ${r[0]} (expired ${Math.round((nowMs - updatedMs) / 60000)} min ago)`);
                 continue; // Treat as free
               }
@@ -207,7 +211,8 @@ module.exports = async function handler(req, res) {
       keyId: orderRes.keyId,
       amount: orderRes.amount,
       currency: orderRes.currency,
-      sheetsRecorded: sheetsSuccess
+      sheetsRecorded: sheetsSuccess,
+      holdExpiresInMinutes: parseInt(process.env.HOLD_EXPIRY_MINUTES || '15', 10)
     });
 
   } catch (err) {

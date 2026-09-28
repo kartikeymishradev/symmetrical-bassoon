@@ -293,8 +293,8 @@
   }
 
   // Cache active order for seamless retry if Razorpay modal is dismissed without changing date/time.
-  // Bug 3 fix: cache is invalidated after HOLD_EXPIRY_MINUTES so a stale order is never reused.
-  const HOLD_EXPIRY_MS = ((window.__REVA_CONFIG && parseInt(window.__REVA_CONFIG.holdExpiryMinutes, 10)) || 15) * 60 * 1000;
+  // HOLD_EXPIRY_MS default — overridden per-order by server's holdExpiresInMinutes response field.
+  const DEFAULT_HOLD_EXPIRY_MS = 15 * 60 * 1000;
   let cachedOrder = null;
 
   // Clear cached order if user changes date or time
@@ -359,14 +359,15 @@
         let bookingId, orderId, keyId, amount, currency;
 
         // Reuse cached active order if user is retrying payment for the exact same date & time after modal dismiss
-        // and the hold has not yet expired server-side
+        // and the server-issued hold has not yet expired (holdExpiresMs comes from the create-order response)
+        const holdExpiryMs = (cachedOrder && cachedOrder.holdExpiresMs) ? cachedOrder.holdExpiresMs : DEFAULT_HOLD_EXPIRY_MS;
         if (cachedOrder && cachedOrder.date === date && cachedOrder.time === time && cachedOrder.phone === phone
-            && (Date.now() - cachedOrder.createdAt < HOLD_EXPIRY_MS)) {
+            && (Date.now() - cachedOrder.createdAt < holdExpiryMs)) {
           bookingId = cachedOrder.bookingId;
-          orderId = cachedOrder.orderId;
-          keyId = cachedOrder.keyId;
-          amount = cachedOrder.amount;
-          currency = cachedOrder.currency;
+          orderId   = cachedOrder.orderId;
+          keyId     = cachedOrder.keyId;
+          amount    = cachedOrder.amount;
+          currency  = cachedOrder.currency;
         } else {
           // Step 1: Create Order & Acquire Slot Hold via API
           const orderPayload = {
@@ -408,13 +409,19 @@
           }
 
           bookingId = orderData.bookingId;
-          orderId = orderData.orderId;
-          keyId = orderData.keyId;
-          amount = orderData.amount;
-          currency = orderData.currency;
+          orderId   = orderData.orderId;
+          keyId     = orderData.keyId;
+          amount    = orderData.amount;
+          currency  = orderData.currency;
 
-          // Save to cache for seamless retry on dismiss (with creation timestamp for expiry tracking)
-          cachedOrder = { bookingId, orderId, keyId, amount, currency, date, time, phone, createdAt: Date.now() };
+          // Save to cache for seamless retry on dismiss.
+          // holdExpiresMs is taken from server response (HOLD_EXPIRY_MINUTES env var) — no hardcoded value.
+          const serverHoldMin = parseInt(orderData.holdExpiresInMinutes, 10) || 15;
+          cachedOrder = {
+            bookingId, orderId, keyId, amount, currency, date, time, phone,
+            createdAt:    Date.now(),
+            holdExpiresMs: serverHoldMin * 60 * 1000
+          };
         }
 
         if (bookingSubmitBtn) {
@@ -522,8 +529,10 @@
               }
             }
           },
-          // Automatically close Razorpay modal when slot hold expires (Bug 3 fix)
-          timeout: Math.floor(HOLD_EXPIRY_MS / 1000),
+          // Automatically close Razorpay modal 2 minutes before the server-side hold expires.
+          // Uses holdExpiresMs from the create-order server response (HOLD_EXPIRY_MINUTES env var).
+          // Minimum floor is 60 seconds so it never closes immediately.
+          timeout: Math.max(60, Math.floor(((cachedOrder && cachedOrder.holdExpiresMs) || DEFAULT_HOLD_EXPIRY_MS) / 1000) - 120),
           modal: {
             ondismiss: function () {
               if (bookingSubmitBtn) {
