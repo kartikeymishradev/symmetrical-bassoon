@@ -3,6 +3,7 @@ const assert = require('node:assert');
 
 // Mock googleapis
 const mockSheetsValuesGet = mock.fn();
+const mockSheetsValuesBatchUpdate = mock.fn(async () => ({}));
 const googleMock = {
   google: {
     auth: {
@@ -13,7 +14,8 @@ const googleMock = {
     sheets: () => ({
       spreadsheets: {
         values: {
-          get: mockSheetsValuesGet
+          get: mockSheetsValuesGet,
+          batchUpdate: mockSheetsValuesBatchUpdate
         }
       }
     })
@@ -119,3 +121,39 @@ describe('getServiceAmount Security Hardening (P0-2)', () => {
     );
   });
 });
+
+const { updateBookingPaymentStatus } = require('../lib/sheets');
+
+describe('updateBookingPaymentStatus Security Hardening (P0-4)', () => {
+  test('fails closed if appointmentStatus is missing', async () => {
+    // Missing appointmentStatus
+    const res = await updateBookingPaymentStatus('b1', 'PAID', 'pay_1', 'ord_1');
+    assert.strictEqual(res.success, false);
+    assert.strictEqual(res.reason, 'missing_required_arguments');
+  });
+
+  test('fails closed if paymentStatus is missing', async () => {
+    // Missing paymentStatus
+    const res = await updateBookingPaymentStatus('b1');
+    assert.strictEqual(res.success, false);
+    assert.strictEqual(res.reason, 'missing_required_arguments');
+  });
+
+  test('executes a single atomic batchUpdate', async () => {
+    mockSheetsValuesGet.mock.mockImplementationOnce(async () => ({
+      data: {
+        values: [['ID'], ['b1']]
+      }
+    }));
+    mockSheetsValuesBatchUpdate.mock.resetCalls();
+
+    const res = await updateBookingPaymentStatus('b1', 'PAID', 'pay_1', 'ord_1', 'CONFIRMED');
+    assert.strictEqual(res.success, true);
+    assert.strictEqual(mockSheetsValuesBatchUpdate.mock.calls.length, 1);
+    
+    const requestArgs = mockSheetsValuesBatchUpdate.mock.calls[0].arguments[0];
+    assert.strictEqual(requestArgs.spreadsheetId, 'test-id');
+    assert.strictEqual(requestArgs.requestBody.data.length, 3);
+  });
+});
+
