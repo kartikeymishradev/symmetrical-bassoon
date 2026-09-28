@@ -31,13 +31,15 @@ module.exports = async function handler(req, res) {
     return res.status(429).json({ error: `Too many enquiry submissions. Please wait ${rateCheck.resetInSec} seconds before retrying.` });
   }
 
+  const validator = require('../lib/validator');
+
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
-    const { name, phone, email, package: pkg, condition, date, notes } = body;
+    let { name, phone, email, package: pkg, condition, date, notes } = body;
 
     // Strict Input Validation
     const cleanName = typeof name === 'string' ? name.trim() : '';
-    const cleanPhone = typeof phone === 'string' ? phone.trim() : '';
+    const cleanPhone = validator.sanitizePhone(phone) || '';
     const cleanEmail = typeof email === 'string' ? email.trim() : '';
     const cleanPackage = typeof pkg === 'string' ? pkg.trim() : '';
     const cleanCondition = typeof condition === 'string' ? condition.trim() : '';
@@ -47,6 +49,14 @@ module.exports = async function handler(req, res) {
     if (!cleanName || !cleanPhone) {
       return res.status(400).json({ error: 'Name and phone number are required.' });
     }
+
+    if (!validator.isValidName(cleanName)) return res.status(400).json({ error: 'Invalid name format.' });
+    if (!validator.isValidPhone(cleanPhone)) return res.status(400).json({ error: 'Invalid phone number format. Must be 10 digits.' });
+    if (!validator.isValidEmail(cleanEmail)) return res.status(400).json({ error: 'Invalid email format.' });
+    if (cleanDate && !validator.isValidDate(cleanDate)) return res.status(400).json({ error: 'Invalid date format or outside allowed booking window.' });
+    if (!validator.isValidText(cleanCondition, 1000)) return res.status(400).json({ error: 'Condition text exceeds 1000 characters.' });
+    if (!validator.isValidText(cleanNotes, 1000)) return res.status(400).json({ error: 'Notes text exceeds 1000 characters.' });
+
 
     const timestamp = new Date().toISOString();
     const bookingId = `ENQ-${Date.now().toString(36).toUpperCase()}`;

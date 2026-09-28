@@ -27,9 +27,10 @@ module.exports = async function handler(req, res) {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     const dateStr = url.searchParams.get('date') || new Date().toISOString().split('T')[0];
 
-    // Validate YYYY-MM-DD format
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-      return res.status(400).json({ error: 'Invalid date format. Expected YYYY-MM-DD.' });
+    const validator = require('../lib/validator');
+    // Validate YYYY-MM-DD format and booking window logic
+    if (!validator.isValidDate(dateStr)) {
+      return res.status(400).json({ error: 'Invalid date format or outside allowed booking window.' });
     }
 
     // 1. Fetch active temporary slot holds from Google Sheets

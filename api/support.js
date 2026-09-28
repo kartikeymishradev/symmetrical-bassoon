@@ -28,13 +28,23 @@ module.exports = async function handler(req, res) {
     return res.status(429).json({ error: `Too many support messages sent. Please wait ${rateCheck.resetInSec} seconds before retrying.` });
   }
 
+  const validator = require('../lib/validator');
+
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
-    const { name, contact, message } = body;
+    let { name, contact, message } = body;
 
-    if (!message) {
+    const cleanName = typeof name === 'string' ? name.trim() : '';
+    const cleanContact = typeof contact === 'string' ? contact.trim() : '';
+    const cleanMessage = typeof message === 'string' ? message.trim() : '';
+
+    if (!cleanMessage) {
       return res.status(400).json({ error: 'Message content is required.' });
     }
+
+    if (cleanName && !validator.isValidName(cleanName)) return res.status(400).json({ error: 'Invalid name format.' });
+    if (!validator.isValidText(cleanContact, 150)) return res.status(400).json({ error: 'Contact info exceeds 150 characters.' });
+    if (!validator.isValidText(cleanMessage, 2000)) return res.status(400).json({ error: 'Message exceeds maximum length.' });
 
     const token = process.env.TELEGRAM_SUPPORT_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_SUPPORT_CHAT_ID;
