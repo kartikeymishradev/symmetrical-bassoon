@@ -137,6 +137,7 @@ module.exports = async function handler(req, res) {
     }
 
     // 2. Write-Verification Guard for Conflict Resolution
+    // Bug 1 fix: expired SLOT_HOLD / PAYMENT_PENDING rows are excluded from conflict scan.
     if (sheetsSuccess && cleanDate && cleanTime) {
       try {
         const { client, sheetId } = getSheetsClient();
@@ -147,16 +148,39 @@ module.exports = async function handler(req, res) {
           });
 
           const rows = checkRes.data.values || [];
-          // Scan for matching rows on same date/time
+          const holdExpiryMinutes = parseInt(process.env.HOLD_EXPIRY_MINUTES || '15', 10);
+          const nowMs = Date.now();
+
+          // Scan for matching rows on same date/time — only count active holds
           const matchingRows = [];
           for (let i = 1; i < rows.length; i++) {
             const r = rows[i];
-            if (r[10] === cleanDate && r[11] === cleanTime && (r[12] === 'SLOT_HOLD' || r[12] === 'PAYMENT_PENDING' || r[12] === 'CONFIRMED')) {
+            if (r[10] !== cleanDate || r[11] !== cleanTime) continue;
+            const status = r[12] || '';
+
+            // CONFIRMED bookings are always active (payment already captured)
+            if (status === 'CONFIRMED' || status === 'REQUESTED') {
+              matchingRows.push({ rowIndex: i + 1, bookingId: r[0], timestamp: r[1] });
+              continue;
+            }
+
+            // For SLOT_HOLD / PAYMENT_PENDING — check if hold is still within expiry window
+            if (status === 'SLOT_HOLD' || status === 'PAYMENT_PENDING') {
+              const updatedAt = r[16] || r[1] || '';
+              const updatedMs = new Date(updatedAt).getTime();
+              const holdExpired = updatedMs && (nowMs - updatedMs > holdExpiryMinutes * 60 * 1000);
+
+              if (holdExpired) {
+                // Asynchronously mark expired hold as SLOT_EXPIRED (best-effort, non-blocking)
+                updateBookingPaymentStatus(r[0], 'CANCELLED', '', '', 'SLOT_EXPIRED').catch(() => {});
+                console.log(`[WriteGuard] Skipping expired ${status} hold for booking ${r[0]} (expired ${Math.round((nowMs - updatedMs) / 60000)} min ago)`);
+                continue; // Treat as free
+              }
               matchingRows.push({ rowIndex: i + 1, bookingId: r[0], timestamp: r[1] });
             }
           }
 
-          // If multiple holds exist for same slot, earlier timestamp wins
+          // If multiple active holds exist for same slot, earlier timestamp wins
           if (matchingRows.length > 1) {
             matchingRows.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
             const winnerBookingId = matchingRows[0].bookingId;

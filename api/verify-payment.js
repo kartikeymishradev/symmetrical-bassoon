@@ -196,7 +196,76 @@ module.exports = async function handler(req, res) {
       console.error('Error appending payment to Sheets:', payErr.message);
     }
 
-    // 4. Create Google Calendar Event (AFTER payment verified)
+    // 4. Pre-Calendar Slot Conflict Check (Bug 2 fix)
+    // Before creating the calendar event, verify the slot hasn't been confirmed by another booking
+    // while this patient's hold was expired and they were still in the payment flow.
+    let lateConflict = false;
+    try {
+      const { client: sheetsClient2, sheetId: sheetId2 } = getSheetsClient();
+      if (sheetsClient2 && sheetId2 && cleanDate && cleanTime) {
+        const slotCheckRes = await sheetsClient2.spreadsheets.values.get({
+          spreadsheetId: sheetId2,
+          range: 'Bookings!A:Q'
+        });
+        const slotRows = slotCheckRes.data.values || [];
+        for (let i = 1; i < slotRows.length; i++) {
+          const r = slotRows[i];
+          if (r[0] === bookingId) continue; // Skip own row
+          if (r[10] === cleanDate && r[11] === cleanTime && r[12] === 'CONFIRMED') {
+            lateConflict = true;
+            break;
+          }
+        }
+      }
+    } catch (conflictCheckErr) {
+      console.warn('[verify-payment] Pre-calendar conflict check failed (continuing):', conflictCheckErr.message);
+    }
+
+    if (lateConflict) {
+      // Mark booking as PAID_SLOT_CONFLICT so admin can see it needs a refund
+      try {
+        await updateBookingPaymentStatus(bookingId, 'PAID', razorpay_payment_id, razorpay_order_id || '', 'PAID_SLOT_CONFLICT');
+      } catch (updateErr) {
+        console.error('[verify-payment] Failed to update PAID_SLOT_CONFLICT status:', updateErr.message);
+      }
+
+      // Send Telegram refund alert
+      const tokenLC = process.env.TELEGRAM_BOT_TOKEN;
+      const chatIdLC = process.env.TELEGRAM_ADMIN_CHAT_ID;
+      const isPlaceholderLC = !tokenLC || !chatIdLC || tokenLC.includes('your_') || tokenLC.includes('temporary_') || chatIdLC.includes('your_');
+      if (!isPlaceholderLC) {
+        const alertMsg = `⚠️ <b>[ACTION REQUIRED: SLOT CONFLICT REFUND]</b>\n` +
+          `Payment received AFTER hold expired — slot was taken by another patient!\n\n` +
+          `Booking ID: ${bookingId}\n` +
+          `Patient: ${name || 'N/A'}\n` +
+          `Phone: ${phone || 'N/A'}\n` +
+          `Date & Time: ${cleanDate} at ${cleanTime}\n` +
+          `Razorpay Payment ID: <code>${razorpay_payment_id}</code>\n` +
+          `Amount: ₹${amount || authoritativeAmount}\n` +
+          `Status: PAID_SLOT_CONFLICT\n\n` +
+          `<i>Please verify Razorpay dashboard and issue manual refund if payment was captured.</i>`;
+        const alertData = JSON.stringify({ chat_id: chatIdLC, text: alertMsg, parse_mode: 'HTML' });
+        const alertOptions = {
+          hostname: 'api.telegram.org', port: 443,
+          path: `/bot${tokenLC}/sendMessage`, method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(alertData) }
+        };
+        await new Promise((resolve) => {
+          const tgReq = https.request(alertOptions, () => resolve());
+          tgReq.on('error', (e) => { console.error('Telegram PAID_SLOT_CONFLICT alert error:', e.message); resolve(); });
+          tgReq.write(alertData);
+          tgReq.end();
+        });
+      }
+
+      return res.status(409).json({
+        error: 'Your slot hold had expired and this time was reserved by another patient. Your payment has been flagged for a full refund — we will contact you shortly.',
+        conflict: true,
+        appointmentStatus: 'PAID_SLOT_CONFLICT'
+      });
+    }
+
+    // 5. Create Google Calendar Event (AFTER payment verified & conflict cleared)
     let calRes = { success: false, meetingLink: '', eventId: '' };
     try {
       calRes = await createAppointmentEvent({
@@ -217,7 +286,7 @@ module.exports = async function handler(req, res) {
     // Determine final appointment_status (CONFIRMED vs CONFIRMATION_PENDING recovery state)
     const finalApptStatus = calRes.success ? 'CONFIRMED' : 'CONFIRMATION_PENDING';
 
-    // 5. Update 'Bookings' tab (payment_status = 'PAID', appointment_status = finalApptStatus)
+    // 6. Update 'Bookings' tab (payment_status = 'PAID', appointment_status = finalApptStatus)
     let bookingUpdateSuccess = false;
     try {
       const updateRes = await updateBookingPaymentStatus(bookingId, 'PAID', razorpay_payment_id, razorpay_order_id, finalApptStatus);
@@ -312,3 +381,4 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to verify payment.' });
   }
 };
+

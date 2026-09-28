@@ -292,7 +292,9 @@
     });
   }
 
-  // Cache active order for seamless retry if Razorpay modal is dismissed without changing date/time
+  // Cache active order for seamless retry if Razorpay modal is dismissed without changing date/time.
+  // Bug 3 fix: cache is invalidated after HOLD_EXPIRY_MINUTES so a stale order is never reused.
+  const HOLD_EXPIRY_MS = ((window.__REVA_CONFIG && parseInt(window.__REVA_CONFIG.holdExpiryMinutes, 10)) || 15) * 60 * 1000;
   let cachedOrder = null;
 
   // Clear cached order if user changes date or time
@@ -357,7 +359,9 @@
         let bookingId, orderId, keyId, amount, currency;
 
         // Reuse cached active order if user is retrying payment for the exact same date & time after modal dismiss
-        if (cachedOrder && cachedOrder.date === date && cachedOrder.time === time && cachedOrder.phone === phone) {
+        // and the hold has not yet expired server-side
+        if (cachedOrder && cachedOrder.date === date && cachedOrder.time === time && cachedOrder.phone === phone
+            && (Date.now() - cachedOrder.createdAt < HOLD_EXPIRY_MS)) {
           bookingId = cachedOrder.bookingId;
           orderId = cachedOrder.orderId;
           keyId = cachedOrder.keyId;
@@ -409,8 +413,8 @@
           amount = orderData.amount;
           currency = orderData.currency;
 
-          // Save to cache for seamless retry on dismiss
-          cachedOrder = { bookingId, orderId, keyId, amount, currency, date, time, phone };
+          // Save to cache for seamless retry on dismiss (with creation timestamp for expiry tracking)
+          cachedOrder = { bookingId, orderId, keyId, amount, currency, date, time, phone, createdAt: Date.now() };
         }
 
         if (bookingSubmitBtn) {
@@ -518,6 +522,8 @@
               }
             }
           },
+          // Automatically close Razorpay modal when slot hold expires (Bug 3 fix)
+          timeout: Math.floor(HOLD_EXPIRY_MS / 1000),
           modal: {
             ondismiss: function () {
               if (bookingSubmitBtn) {
@@ -525,7 +531,7 @@
                 bookingSubmitBtn.textContent = 'Book & Pay Consultation Slot';
               }
               if (errorAlert) {
-                errorAlert.textContent = 'Payment cancelled. Your 15-minute slot hold is active — click Book & Pay to retry.';
+                errorAlert.textContent = 'Payment cancelled. Your slot hold is still active — click Book & Pay to retry within the hold window.';
                 errorAlert.style.display = 'block';
               }
             }
