@@ -2,17 +2,17 @@
  * Serverless API Endpoint: REVA Health Verify Payment & Confirm Appointment
  * Route: POST /api/verify-payment
  *
- * 1. Validates required fields (bookingId, razorpay_payment_id).
- * 2. Guards against SLOT_CONFLICT_CANCELLED bookings (payment on cancelled slot → refund alert).
- * 3. Idempotency guard: if payment already recorded in Payments tab, return 200 immediately.
- * 4. Verifies Razorpay HMAC-SHA256 signature server-side.
- * 5. Appends transaction record to 'Payments' tab (11 columns A:K, RAW).
- * 6. Delegates all remaining work to lib/confirm-booking.js:
- *    - Terminal-state guard (never overwrites CONFIRMED / PAID_SLOT_CONFLICT / etc.)
- *    - Slot conflict check (returns 409 + Telegram refund alert if taken)
- *    - Google Calendar event creation (skipped if event already exists)
- *    - Bookings tab update + Telegram success alert
- * 7. Invokes WhatsApp confirmation hook.
+ * 1. Validates required fields.
+ * 2. Reads booking row from Sheets (authoritative source for order binding & status).
+ * 3. Order-binding check: razorpay_order_id must match the booking's own order ID
+ *    stored in Sheets — prevents a valid HMAC for one order confirming a different booking. (S8)
+ * 4. SLOT_CONFLICT_CANCELLED guard: payment on cancelled slot → 409 + refund alert.
+ * 5. SLOT_EXPIRED guard: payment after hold expired → 409 + refund alert. (S7)
+ * 6. Idempotency guard: payment already in Payments tab → 200 with full booking details. (S5)
+ * 7. Verifies Razorpay HMAC-SHA256 signature server-side.
+ * 8. Appends transaction to 'Payments' tab.
+ * 9. Delegates to lib/confirm-booking.js (conflict check, calendar, Sheets update, Telegram).
+ * 10. WhatsApp confirmation hook (fire-and-forget).
  */
 
 const https = require('https');
@@ -21,21 +21,13 @@ const { appendPayment, updateBookingPaymentStatus, isPaymentRecorded, getAllBook
 const { sendWhatsAppConfirmation } = require('../lib/whatsapp');
 const { checkRateLimit } = require('../lib/ratelimit');
 const { setCorsHeaders } = require('../lib/cors');
-const { confirmBooking } = require('../lib/confirm-booking');
+const { confirmBooking, escHtml } = require('../lib/confirm-booking');
 
 module.exports = async function handler(req, res) {
-  // Dynamic CORS Headers
   setCorsHeaders(req, res, { methods: 'POST, OPTIONS' });
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
-
-  // Rate Limiting (10 requests per minute per IP)
   const rateCheck = checkRateLimit(req, res, 10, 60 * 1000);
   if (rateCheck.limited) {
     return res.status(429).json({ error: `Too many payment verification attempts. Please wait ${rateCheck.resetInSec} seconds before retrying.` });
@@ -58,11 +50,12 @@ module.exports = async function handler(req, res) {
       calendarIdOverride
     } = body;
 
+    // 1. Basic field validation
     if (!bookingId || !razorpay_payment_id) {
       return res.status(400).json({ error: 'Booking ID and Payment ID are required.' });
     }
 
-    // 1. Read booking row (needed for slot-conflict-cancelled guard and authoritative amount)
+    // 2. Read booking row (authoritative source)
     let existingBooking = null;
     try {
       const { bookings } = await getAllBookings();
@@ -71,65 +64,81 @@ module.exports = async function handler(req, res) {
       console.warn('[verify-payment] Could not read existing booking:', e.message);
     }
 
-    // 2. Guard: booking was pre-cancelled at create-order time due to a race condition
+    // 3. Order-binding check (S8 fix)
+    // The razorpay_order_id in the request must match what was stored at create-order time.
+    // This prevents a valid HMAC for a different (e.g. cheaper) order from confirming this booking.
+    if (existingBooking && existingBooking.razorpay_link_id) {
+      // razorpay_link_id column stores the order_id set at create-order time
+      if (existingBooking.razorpay_link_id !== razorpay_order_id) {
+        console.warn(`[verify-payment] Order ID mismatch for booking=${bookingId}: expected=${existingBooking.razorpay_link_id} got=${razorpay_order_id}`);
+        return res.status(400).json({ error: 'Payment order does not match this booking. Verification failed.' });
+      }
+    }
+
+    // 4. SLOT_CONFLICT_CANCELLED guard
     if (existingBooking && existingBooking.appointment_status === 'SLOT_CONFLICT_CANCELLED') {
-      // Payment arrived on an already-cancelled booking slot — flag for refund
       await _sendRefundAlert({
         reason: 'SLOT_CONFLICT_CANCELLED',
-        bookingId,
-        name: name || existingBooking.patient_name,
+        bookingId, name: name || existingBooking.patient_name,
         phone: phone || existingBooking.phone_number,
         amount: amount || existingBooking.amount || 400,
-        razorpay_payment_id,
-        razorpay_order_id
+        razorpay_payment_id, razorpay_order_id
       });
       return res.status(409).json({
         error: 'This booking slot was already reserved by another patient. Please contact support for a refund if payment was captured.'
       });
     }
 
-    // 3. Idempotency Guard (payment already fully recorded in Payments tab)
+    // 5. SLOT_EXPIRED guard (S7 fix)
+    // If the slot hold expired before payment, flag for refund — do not confirm the booking.
+    if (existingBooking && existingBooking.appointment_status === 'SLOT_EXPIRED') {
+      await _sendRefundAlert({
+        reason: 'SLOT_EXPIRED — hold had already expired when payment was captured',
+        bookingId, name: name || existingBooking.patient_name,
+        phone: phone || existingBooking.phone_number,
+        amount: amount || existingBooking.amount || 400,
+        razorpay_payment_id, razorpay_order_id
+      });
+      return res.status(409).json({
+        error: 'Your slot reservation had already expired before payment was captured. Your payment has been flagged for a full refund — we will contact you shortly.',
+        expired: true
+      });
+    }
+
+    // 6. Idempotency guard (S5 fix)
+    // Return full booking status so patient UI can show confirmation details on retry.
     const alreadyProcessed = await isPaymentRecorded(razorpay_payment_id, bookingId);
     if (alreadyProcessed) {
       return res.status(200).json({
-        success: true,
-        idempotent: true,
+        success:           true,
+        idempotent:        true,
         bookingId,
+        appointmentStatus: (existingBooking && existingBooking.appointment_status) || 'CONFIRMED',
+        meetingLink:       (existingBooking && existingBooking.calendar_event_id)
+                             ? `https://meet.google.com/${existingBooking.calendar_event_id}`
+                             : '',
         message: 'Payment already processed and recorded previously.'
       });
     }
 
-    // 4. Verify HMAC-SHA256 Signature
-    const sigCheck = verifyPaymentSignature({
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature
-    });
+    // 7. Verify HMAC-SHA256 Signature
+    const sigCheck = verifyPaymentSignature({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
     if (!sigCheck.isValid) {
       return res.status(400).json({ error: 'Invalid payment signature. Payment verification failed.' });
     }
 
     const timestamp = new Date().toISOString();
 
-    // 5. Append Transaction to 'Payments' tab (11 columns A:K, RAW)
-    // Use authoritative amount from Bookings row — never trust client input
+    // 8. Append Transaction to 'Payments' tab — authoritative amount from Sheets, never client
     const authoritativeAmount = (existingBooking && existingBooking.amount && !isNaN(parseFloat(existingBooking.amount)))
       ? parseFloat(existingBooking.amount)
       : 400;
 
-    const paymentId = `PAY-${Date.now().toString(36).toUpperCase()}`;
+    const paymentId  = `PAY-${Date.now().toString(36).toUpperCase()}`;
     const paymentRow = [
-      paymentId,
-      bookingId,
-      razorpay_payment_id,
-      razorpay_order_id || '',
-      authoritativeAmount,
-      'INR',
-      'captured',
-      'online',
-      timestamp,
-      'payment.verify',
-      timestamp
+      paymentId, bookingId, razorpay_payment_id, razorpay_order_id || '',
+      authoritativeAmount, 'INR', 'captured', 'online',
+      timestamp, 'payment.verify', timestamp
     ];
 
     let paySuccess = false;
@@ -140,31 +149,27 @@ module.exports = async function handler(req, res) {
       console.error('[verify-payment] Error appending payment to Sheets:', payErr.message);
     }
 
-    // 6. Delegate: slot conflict check, calendar creation, Bookings update, Telegram alert
+    // 9. Delegate: conflict check, calendar creation, Bookings update, Telegram alert
     const confirmResult = await confirmBooking({
       bookingId,
       razorpayPaymentId: razorpay_payment_id,
       razorpayOrderId:   razorpay_order_id || '',
-      date,
-      time,
-      name,
-      phone,
-      email,
-      packageName: pkg,
-      amount:      authoritativeAmount,
+      date, time, name, phone, email,
+      packageName:       pkg,
+      amount:            authoritativeAmount,
       calendarIdOverride,
-      source:      'verify-payment'
+      source:            'verify-payment'
     });
 
     if (confirmResult.outcome === 'conflict') {
       return res.status(409).json({
         error: 'Your slot hold had expired and this time was reserved by another patient. Your payment has been flagged for a full refund — we will contact you shortly.',
-        conflict: true,
+        conflict:          true,
         appointmentStatus: 'PAID_SLOT_CONFLICT'
       });
     }
 
-    // 7. WhatsApp confirmation hook (fire-and-forget — non-critical)
+    // 10. WhatsApp confirmation (fire-and-forget, non-critical)
     sendWhatsAppConfirmation({
       phone,
       patientName:  name,
@@ -196,20 +201,21 @@ module.exports = async function handler(req, res) {
 };
 
 /**
- * Sends a Telegram refund-required alert. Used only for SLOT_CONFLICT_CANCELLED guard.
+ * Sends a Telegram refund-required alert.
  */
 async function _sendRefundAlert({ reason, bookingId, name, phone, amount, razorpay_payment_id, razorpay_order_id }) {
   const token  = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
   if (!token || !chatId || token.includes('your_') || token.includes('temporary_') || chatId.includes('your_')) return;
 
-  const text = `⚠️ <b>[ACTION REQUIRED: MANUAL REFUND]</b>\n` +
-    `Payment attempted on CANCELLED booking slot!\n\n` +
-    `Booking ID: ${bookingId}\n` +
-    `Patient: ${name || 'N/A'}\nPhone: ${phone || 'N/A'}\n` +
-    `Razorpay Payment ID: <code>${razorpay_payment_id}</code>\n` +
-    `Razorpay Order ID: <code>${razorpay_order_id || 'N/A'}</code>\n` +
-    `Amount: \u20B9${amount}\nReason: ${reason}\n\n` +
+  const text =
+    `⚠️ <b>[ACTION REQUIRED: MANUAL REFUND]</b>\n` +
+    `Payment attempted on a booking that cannot be confirmed!\n\n` +
+    `Booking ID: ${escHtml(bookingId)}\n` +
+    `Patient: ${escHtml(name || 'N/A')}\nPhone: ${escHtml(phone || 'N/A')}\n` +
+    `Razorpay Payment ID: <code>${escHtml(razorpay_payment_id)}</code>\n` +
+    `Razorpay Order ID: <code>${escHtml(razorpay_order_id || 'N/A')}</code>\n` +
+    `Amount: \u20B9${amount}\nReason: ${escHtml(reason)}\n\n` +
     `<i>Please verify Razorpay dashboard and issue manual refund if payment was captured.</i>`;
 
   const data = JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' });
