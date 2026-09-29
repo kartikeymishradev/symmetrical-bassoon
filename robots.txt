@@ -1,6 +1,5 @@
-# REVA Health Robots Configuration
 User-agent: *
 Allow: /
-
-# Sitemaps
-Sitemap: https://www.docatdoors.com/sitemap.xml
+Disallow: /api/
+Disallow: /admin/
+Sitemap: https://www.revahealth.in/sitemap.xml
