@@ -10,6 +10,7 @@
 const { getAvailableSlots } = require('../lib/calendar');
 const { fetchActiveSlotHolds } = require('../lib/sheets');
 const { setCorsHeaders } = require('../lib/cors');
+const { checkRateLimit } = require('../lib/ratelimit');
 
 module.exports = async function handler(req, res) {
   // Dynamic CORS Headers
@@ -17,6 +18,12 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // Rate Limiting (30 requests per minute per IP — read-only but hits Sheets+Calendar)
+  const rateCheck = checkRateLimit(req, res, 30, 60 * 1000);
+  if (rateCheck.limited) {
+    return res.status(429).json({ error: `Too many slot requests. Please wait ${rateCheck.resetInSec} seconds before retrying.` });
   }
 
   if (req.method !== 'GET') {
