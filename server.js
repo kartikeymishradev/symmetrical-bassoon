@@ -24,7 +24,6 @@ if (fs.existsSync(envPath)) {
 
 const enquiryHandler = require('./api/enquiry');
 const supportHandler = require('./api/support');
-const testSheetsHandler = require('./api/test-sheets');
 const servicesHandler = require('./api/services');
 const slotsHandler = require('./api/slots');
 const createOrderHandler = require('./api/create-order');
@@ -54,8 +53,19 @@ const server = http.createServer((req, res) => {
   const handleApi = (handler) => {
     if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
       let body = '';
-      req.on('data', chunk => body += chunk);
+      let tooLarge = false;
+      req.on('data', chunk => {
+        if (tooLarge) return;
+        body += chunk;
+        if (Buffer.byteLength(body) > 100 * 1024) {
+          tooLarge = true;
+          res.statusCode = 413;
+          res.end('Payload Too Large');
+          req.connection.destroy();
+        }
+      });
       req.on('end', () => {
+        if (tooLarge) return;
         req.body = body;
         handler(req, createResWrapper(res));
       });
@@ -67,7 +77,6 @@ const server = http.createServer((req, res) => {
   // Handle Serverless API Routes
   if (pathname === '/api/enquiry') return handleApi(enquiryHandler);
   if (pathname === '/api/support') return handleApi(supportHandler);
-  if (pathname === '/api/test-sheets') return handleApi(testSheetsHandler);
   if (pathname === '/api/services') return handleApi(servicesHandler);
   if (pathname === '/api/slots') return handleApi(slotsHandler);
   if (pathname === '/api/create-order') return handleApi(createOrderHandler);
@@ -75,8 +84,17 @@ const server = http.createServer((req, res) => {
   if (pathname === '/api/webhook-razorpay') return handleApi(webhookRazorpayHandler);
   if (pathname === '/api/admin/bookings') return handleApi(adminBookingsHandler);
 
+  // Block dotfiles (e.g. /.env, /.git)
+  if (pathname.split('/').some(segment => segment.startsWith('.'))) {
+    res.statusCode = 403;
+    res.setHeader('Content-Type', 'text/plain');
+    return res.end('Forbidden');
+  }
+
   // Handle Static File Serving with Clean URLs Support
-  let filePath = path.join(__dirname, pathname === '/' ? 'index.html' : pathname);
+  // Prevent path traversal by normalizing and safely resolving relative to __dirname
+  const safePathname = path.normalize(decodeURIComponent(pathname)).replace(/^(\.\.[\/\\])+/, '');
+  let filePath = path.join(__dirname, safePathname === '/' || safePathname === '\\' ? 'index.html' : safePathname);
   
   if (!fs.existsSync(filePath)) {
     if (fs.existsSync(filePath + '.html')) {
@@ -95,6 +113,31 @@ const server = http.createServer((req, res) => {
     } else {
       filePath = path.join(__dirname, 'index.html');
     }
+  }
+
+  // Enforce Allowlist for Static Assets
+  // Only serve files from allowed public directories or specific public root files
+  const allowedDirectories = ['css', 'js', 'assets', 'admin'];
+  const allowedRootFiles = ['index.html', 'blog.html', '404.html', 'favicon.ico', 'robots.txt', 'sitemap.xml'];
+  
+  // Calculate relative path from __dirname to the resolved filePath
+  const relativePath = path.relative(__dirname, filePath);
+  const pathParts = relativePath.split(path.sep);
+  const topLevel = pathParts[0];
+
+  // Prevent serving anything outside __dirname (path traversal catch-all)
+  if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+    res.statusCode = 403;
+    res.setHeader('Content-Type', 'text/plain');
+    return res.end('Forbidden');
+  }
+
+  // Check allowlist
+  const isAllowed = allowedDirectories.includes(topLevel) || (pathParts.length === 1 && allowedRootFiles.includes(topLevel));
+  if (!isAllowed) {
+    res.statusCode = 403;
+    res.setHeader('Content-Type', 'text/plain');
+    return res.end('Forbidden: Not a public asset');
   }
 
   const ext = path.extname(filePath).toLowerCase();
@@ -129,6 +172,7 @@ function createResWrapper(res) {
 }
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`REVA Health server running at http://localhost:${PORT}`);
+const HOST = process.env.HOST || '127.0.0.1';
+server.listen(PORT, HOST, () => {
+  console.log(`REVA Health server running at http://${HOST}:${PORT}`);
 });

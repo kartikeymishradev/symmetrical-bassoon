@@ -51,11 +51,17 @@ module.exports = async function handler(req, res) {
     } = body;
 
     // 1. Basic field validation
-    if (!bookingId || !razorpay_payment_id) {
-      return res.status(400).json({ error: 'Booking ID and Payment ID are required.' });
+    if (!bookingId || !razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+      return res.status(400).json({ error: 'Missing required payment parameters.' });
     }
 
-    // 2. Read booking row (authoritative source)
+    // 2. Verify HMAC-SHA256 Signature FIRST
+    const sigCheck = verifyPaymentSignature({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
+    if (!sigCheck.isValid) {
+      return res.status(400).json({ error: 'Invalid payment signature. Payment verification failed.' });
+    }
+
+    // 3. Read booking row (authoritative source)
     let existingBooking = null;
     try {
       const { bookings } = await getAllBookings();
@@ -64,24 +70,31 @@ module.exports = async function handler(req, res) {
       console.warn('[verify-payment] Could not read existing booking:', e.message);
     }
 
-    // 3. Order-binding check (S8 fix)
-    // The razorpay_order_id in the request must match what was stored at create-order time.
-    // This prevents a valid HMAC for a different (e.g. cheaper) order from confirming this booking.
-    if (existingBooking && existingBooking.razorpay_link_id) {
-      // razorpay_link_id column stores the order_id set at create-order time
-      if (existingBooking.razorpay_link_id !== razorpay_order_id) {
-        console.warn(`[verify-payment] Order ID mismatch for booking=${bookingId}: expected=${existingBooking.razorpay_link_id} got=${razorpay_order_id}`);
-        return res.status(400).json({ error: 'Payment order does not match this booking. Verification failed.' });
-      }
+    // Fail closed if row is missing or unreadable
+    if (!existingBooking) {
+      return res.status(404).json({ error: 'Booking not found or unreadable.' });
     }
 
+    // Fail closed if razorpay_link_id is missing or doesn't match
+    if (!existingBooking.razorpay_link_id) {
+      return res.status(400).json({ error: 'Booking has no associated order.' });
+    }
+    if (existingBooking.razorpay_link_id !== razorpay_order_id) {
+      console.warn(`[verify-payment] Order ID mismatch for booking=${bookingId}: expected=${existingBooking.razorpay_link_id} got=${razorpay_order_id}`);
+      return res.status(400).json({ error: 'Payment order does not match this booking. Verification failed.' });
+    }
+
+    const authName = existingBooking.patient_name || 'N/A';
+    const authPhone = existingBooking.phone_number || 'N/A';
+    const authAmount = (existingBooking.amount && !isNaN(parseFloat(existingBooking.amount))) ? parseFloat(existingBooking.amount) : 400;
+
     // 4. SLOT_CONFLICT_CANCELLED guard
-    if (existingBooking && existingBooking.appointment_status === 'SLOT_CONFLICT_CANCELLED') {
+    if (existingBooking.appointment_status === 'SLOT_CONFLICT_CANCELLED') {
       await _sendRefundAlert({
         reason: 'SLOT_CONFLICT_CANCELLED',
-        bookingId, name: name || existingBooking.patient_name,
-        phone: phone || existingBooking.phone_number,
-        amount: amount || existingBooking.amount || 400,
+        bookingId, name: authName,
+        phone: authPhone,
+        amount: authAmount,
         razorpay_payment_id, razorpay_order_id
       });
       return res.status(409).json({
@@ -90,13 +103,12 @@ module.exports = async function handler(req, res) {
     }
 
     // 5. SLOT_EXPIRED guard (S7 fix)
-    // If the slot hold expired before payment, flag for refund — do not confirm the booking.
-    if (existingBooking && existingBooking.appointment_status === 'SLOT_EXPIRED') {
+    if (existingBooking.appointment_status === 'SLOT_EXPIRED') {
       await _sendRefundAlert({
         reason: 'SLOT_EXPIRED — hold had already expired when payment was captured',
-        bookingId, name: name || existingBooking.patient_name,
-        phone: phone || existingBooking.phone_number,
-        amount: amount || existingBooking.amount || 400,
+        bookingId, name: authName,
+        phone: authPhone,
+        amount: authAmount,
         razorpay_payment_id, razorpay_order_id
       });
       return res.status(409).json({
@@ -106,38 +118,27 @@ module.exports = async function handler(req, res) {
     }
 
     // 6. Idempotency guard (S5 fix)
-    // Return full booking status so patient UI can show confirmation details on retry.
     const alreadyProcessed = await isPaymentRecorded(razorpay_payment_id, bookingId);
     if (alreadyProcessed) {
       return res.status(200).json({
         success:           true,
         idempotent:        true,
         bookingId,
-        appointmentStatus: (existingBooking && existingBooking.appointment_status) || 'CONFIRMED',
-        meetingLink:       (existingBooking && existingBooking.calendar_event_id)
+        appointmentStatus: existingBooking.appointment_status || 'CONFIRMED',
+        meetingLink:       existingBooking.calendar_event_id
                              ? `https://meet.google.com/${existingBooking.calendar_event_id}`
                              : '',
         message: 'Payment already processed and recorded previously.'
       });
     }
 
-    // 7. Verify HMAC-SHA256 Signature
-    const sigCheck = verifyPaymentSignature({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
-    if (!sigCheck.isValid) {
-      return res.status(400).json({ error: 'Invalid payment signature. Payment verification failed.' });
-    }
-
     const timestamp = new Date().toISOString();
 
-    // 8. Append Transaction to 'Payments' tab — authoritative amount from Sheets, never client
-    const authoritativeAmount = (existingBooking && existingBooking.amount && !isNaN(parseFloat(existingBooking.amount)))
-      ? parseFloat(existingBooking.amount)
-      : 400;
-
+    // 7. Append Transaction to 'Payments' tab
     const paymentId  = `PAY-${Date.now().toString(36).toUpperCase()}`;
     const paymentRow = [
-      paymentId, bookingId, razorpay_payment_id, razorpay_order_id || '',
-      authoritativeAmount, 'INR', 'captured', 'online',
+      paymentId, bookingId, razorpay_payment_id, razorpay_order_id,
+      authAmount, 'INR', 'captured', 'online',
       timestamp, 'payment.verify', timestamp
     ];
 
@@ -149,15 +150,11 @@ module.exports = async function handler(req, res) {
       console.error('[verify-payment] Error appending payment to Sheets:', payErr.message);
     }
 
-    // 9. Delegate: conflict check, calendar creation, Bookings update, Telegram alert
+    // 8. Delegate: conflict check, calendar creation, Bookings update, Telegram alert
     const confirmResult = await confirmBooking({
       bookingId,
       razorpayPaymentId: razorpay_payment_id,
-      razorpayOrderId:   razorpay_order_id || '',
-      date, time, name, phone, email,
-      packageName:       pkg,
-      amount:            authoritativeAmount,
-      calendarIdOverride,
+      razorpayOrderId:   razorpay_order_id,
       source:            'verify-payment'
     });
 
@@ -169,15 +166,15 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // 10. WhatsApp confirmation (fire-and-forget, non-critical)
+    // 9. WhatsApp confirmation (fire-and-forget, non-critical)
     sendWhatsAppConfirmation({
-      phone,
-      patientName:  name,
-      date:         date || timestamp.split('T')[0],
-      time:         time || '',
+      phone:        existingBooking.phone_number,
+      patientName:  existingBooking.patient_name,
+      date:         existingBooking.appointment_date || timestamp.split('T')[0],
+      time:         existingBooking.appointment_time || '',
       meetingLink:  confirmResult.meetingLink,
       bookingId,
-      packageName:  pkg
+      packageName:  existingBooking.service_name || 'Doctor Consultation'
     });
 
     return res.status(200).json({

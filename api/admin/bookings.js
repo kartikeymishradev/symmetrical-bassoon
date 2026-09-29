@@ -2,7 +2,7 @@
  * Serverless API Endpoint: REVA Health Admin Dashboard & Operations API
  * Route: /api/admin/bookings
  *
- * 1. Admin Authentication via x-admin-secret header or secret query parameter.
+ * 1. Admin Authentication via x-admin-secret header only (timing-safe comparison).
  * 2. GET: Returns all bookings and payments from Google Sheets.
  * 3. POST action="retry_calendar_sync": Retries Calendar event creation for CONFIRMATION_PENDING bookings.
  * 4. POST action="update_status": Updates booking or payment status manually.
@@ -13,14 +13,23 @@ const { createAppointmentEvent } = require('../../lib/calendar');
 const { setCorsHeaders } = require('../../lib/cors');
 const { checkRateLimit } = require('../../lib/ratelimit');
 const https = require('https');
+const crypto = require('crypto');
 
 function verifyAdminAuth(req) {
   const secretKey = process.env.ADMIN_SECRET_KEY;
   if (!secretKey) {
     return { valid: false, error: 'ADMIN_SECRET_KEY_NOT_SET' };
   }
-  const providedSecret = req.headers['x-admin-secret'] || (req.query && req.query.secret);
-  if (providedSecret === secretKey) {
+  const providedSecret = req.headers['x-admin-secret'];
+  if (!providedSecret || typeof providedSecret !== 'string') {
+    return { valid: false, error: 'UNAUTHORIZED' };
+  }
+  const expectedBuf = Buffer.from(secretKey, 'utf8');
+  const actualBuf = Buffer.from(providedSecret, 'utf8');
+  if (expectedBuf.length !== actualBuf.length) {
+    return { valid: false, error: 'UNAUTHORIZED' };
+  }
+  if (crypto.timingSafeEqual(expectedBuf, actualBuf)) {
     return { valid: true };
   }
   return { valid: false, error: 'UNAUTHORIZED' };
@@ -109,13 +118,10 @@ module.exports = async function handler(req, res) {
         }
 
         const calRes = await createAppointmentEvent({
-          summary: `REVA Health Consultation: ${booking.patient_name || 'Patient'}`,
-          description: `Confirmed Medical Consultation (Admin Retry Sync)\nBooking ID: ${bookingId}\nPatient: ${booking.patient_name}\nPhone: ${booking.phone_number}\nEmail: ${booking.email}`,
+          summary: `REVA Health Consultation (${bookingId})`,
+          description: `Confirmed Medical Consultation (Admin Retry Sync)\nBooking ID: ${bookingId}\nService: ${booking.service_name || 'Standard Consultation'}`,
           startIso: startIso,
           endIso: endIso,
-          patientName: booking.patient_name,
-          patientEmail: booking.email,
-          patientPhone: booking.phone_number,
           bookingId: bookingId
         });
 
@@ -135,7 +141,7 @@ module.exports = async function handler(req, res) {
 
         if (!isPlaceholder) {
           const messageText = `REVA HEALTH CALENDAR SYNC RECOVERED (${bookingId})\n\n` +
-            `Patient: ${booking.patient_name}\n` +
+            `Booking: ${bookingId}\n` +
             `Date & Time: ${cleanDate} at ${cleanTime}\n` +
             `Google Meet Link: ${calRes.meetingLink || 'Scheduled'}\n` +
             `Status: CONFIRMED (Admin Action)`;
@@ -177,8 +183,11 @@ module.exports = async function handler(req, res) {
       }
 
       if (action === 'update_status') {
-        const targetApptStatus = appointmentStatus || 'CONFIRMED';
-        const targetPayStatus = paymentStatus || 'PAID';
+        if (!appointmentStatus || !paymentStatus) {
+          return res.status(400).json({ error: 'Both appointmentStatus and paymentStatus are explicitly required.' });
+        }
+        const targetApptStatus = appointmentStatus;
+        const targetPayStatus = paymentStatus;
 
         const updateRes = await updateBookingPaymentStatus(
           bookingId,

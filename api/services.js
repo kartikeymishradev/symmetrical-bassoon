@@ -8,6 +8,7 @@
 
 const { fetchServices } = require('../lib/sheets');
 const { setCorsHeaders } = require('../lib/cors');
+const { checkRateLimit } = require('../lib/ratelimit');
 
 const FALLBACK_SERVICES = [
   { service_id: 'SRV-DOC-400', service_name: 'Doctor Consultation', amount: 400, active: true },
@@ -23,6 +24,12 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // Rate Limiting (30 requests per minute per IP)
+  const rateCheck = checkRateLimit(req, res, 30, 60 * 1000);
+  if (rateCheck.limited) {
+    return res.status(429).json({ error: `Too many service requests. Please wait ${rateCheck.resetInSec} seconds before retrying.` });
   }
 
   if (req.method !== 'GET') {
