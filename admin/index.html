@@ -4,135 +4,143 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>REVA Health — Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     :root {
-      --primary: #0284c7;
-      --primary-dark: #0369a1;
-      --bg: #f8fafc;
-      --card-bg: #ffffff;
-      --text: #0f172a;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
-      --success: #16a34a;
-      --warning: #d97706;
-      --danger: #dc2626;
+      --teal: #0d9488; --sky: #0284c7; --violet: #7c3aed; --amber: #f59e0b; --coral: #f43f5e; --green: #16a34a;
+      --bg: #f1f5f9; --card: #ffffff; --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); line-height: 1.5; padding: 20px; }
-    .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-    .header h1 { font-size: 1.5rem; color: var(--primary-dark); }
-    .auth-box { display: flex; gap: 10px; align-items: center; }
-    input[type="password"], input[type="text"] { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; width: 220px; }
-    button { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: background 0.2s; }
-    button:hover { background: var(--primary-dark); }
-    button.btn-warning { background: var(--warning); }
-    button.btn-warning:hover { background: #b45309; }
-    button.btn-secondary { background: #94a3b8; }
-    button.btn-secondary:hover { background: #64748b; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Plus Jakarta Sans", -apple-system, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); line-height: 1.5; }
 
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
-    .stat-card { background: var(--card-bg); padding: 15px 20px; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .stat-card .label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
-    .stat-card .value { font-size: 1.6rem; font-weight: 700; color: var(--text); margin-top: 5px; }
+    .hero { background: linear-gradient(120deg, #0f766e 0%, #0284c7 55%, #7c3aed 100%); color: #fff; padding: 22px 28px 90px; }
+    .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; max-width: 1400px; margin: 0 auto; }
+    .brand h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+    .brand p { font-size: 0.85rem; opacity: .8; }
+    .auth-box { display: flex; gap: 10px; align-items: center; background: rgba(255,255,255,.15); padding: 8px; border-radius: 12px; backdrop-filter: blur(6px); }
+    input[type="password"] { padding: 9px 12px; border: none; border-radius: 8px; font-size: .9rem; width: 220px; background: rgba(255,255,255,.95); color: var(--text); }
+    button { border: none; cursor: pointer; font-weight: 600; border-radius: 8px; font-size: .88rem; transition: transform .15s, filter .15s; color: #fff; }
+    button:hover { filter: brightness(1.08); }
+    button:active { transform: scale(.97); }
+    button:focus-visible, input:focus-visible { outline: 3px solid #fde68a; outline-offset: 2px; }
+    .btn-refresh { background: #fff; color: var(--sky); padding: 9px 18px; }
 
-    .section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .wrap { max-width: 1400px; margin: -64px auto 40px; padding: 0 20px; }
 
-    .table-container { background: var(--card-bg); border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; margin-bottom: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
-    th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-    th { background: #f1f5f9; font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .stat-card { background: var(--card); border-radius: 16px; padding: 18px 20px; display: flex; gap: 14px; align-items: center; box-shadow: 0 6px 20px rgba(15,23,42,.08); }
+    .stat-icon { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; font-size: 1.4rem; flex-shrink: 0; }
+    .stat-card .label { font-size: .8rem; color: var(--muted); font-weight: 500; }
+    .stat-card .value { font-size: 1.65rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+    .s-blue .stat-icon { background: #e0f2fe; } .s-blue .value { color: var(--sky); }
+    .s-violet .stat-icon { background: #ede9fe; } .s-violet .value { color: var(--violet); }
+    .s-amber .stat-icon { background: #fef3c7; } .s-amber .value { color: #d97706; }
+    .s-green .stat-icon { background: #dcfce7; } .s-green .value { color: var(--green); }
+
+    .charts-grid { display: grid; grid-template-columns: 1.6fr 1fr 1.2fr; gap: 16px; margin-bottom: 26px; }
+    @media (max-width: 1050px) { .charts-grid { grid-template-columns: 1fr; } }
+    .chart-card { background: var(--card); border-radius: 16px; padding: 18px 20px; box-shadow: 0 6px 20px rgba(15,23,42,.06); border-top: 4px solid var(--sky); }
+    .chart-card:nth-child(2) { border-top-color: var(--violet); }
+    .chart-card:nth-child(3) { border-top-color: var(--teal); }
+    .chart-card h3 { font-size: .95rem; font-weight: 700; margin-bottom: 12px; }
+    .chart-box { position: relative; height: 240px; }
+    .empty-chart { position: absolute; inset: 0; display: none; place-items: center; color: var(--muted); font-size: .85rem; text-align: center; }
+
+    .section-title { font-size: 1.05rem; font-weight: 700; margin: 6px 0 12px; display: flex; align-items: center; gap: 10px; }
+    .section-title::before { content: ""; width: 5px; height: 20px; border-radius: 4px; background: linear-gradient(var(--teal), var(--violet)); }
+
+    .table-container { background: var(--card); border-radius: 16px; overflow-x: auto; margin-bottom: 30px; box-shadow: 0 6px 20px rgba(15,23,42,.06); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: .85rem; }
+    th, td { padding: 13px 16px; white-space: nowrap; border-bottom: 1px solid var(--border); }
+    th { background: linear-gradient(90deg, #f0fdfa, #eff6ff); color: #0f766e; font-weight: 700; font-size: .78rem; }
+    tbody tr:nth-child(even) td { background: #f8fafc; }
+    tbody tr:hover td { background: #ecfeff; }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #f8fafc; }
+    code { background: #f1f5f9; padding: 2px 6px; border-radius: 6px; font-size: .78rem; color: var(--violet); }
 
-    .badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+    .badge { padding: 4px 10px; border-radius: 999px; font-size: .74rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
     .badge-paid { background: #dcfce7; color: #15803d; }
     .badge-pending { background: #fef3c7; color: #b45309; }
     .badge-confirmed { background: #e0f2fe; color: #0369a1; }
-    .badge-failed { background: #fee2e2; color: #b91c1c; }
+    .badge-failed { background: #ffe4e6; color: #be123c; }
 
-    .action-btn { padding: 4px 10px; font-size: 0.75rem; }
-    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #ffffff; border-radius: 50%; border-top-color: transparent; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 5px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .toast { position: fixed; bottom: 20px; right: 20px; background: #0f172a; color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; display: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .action-btn { padding: 6px 12px; font-size: .75rem; }
+    .btn-warning { background: linear-gradient(135deg, #f59e0b, #ea580c); }
+    .btn-secondary { background: linear-gradient(135deg, #0d9488, #0284c7); }
+
+    .toast { position: fixed; bottom: 20px; right: 20px; background: #0f172a; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: .9rem; display: none; z-index: 1000; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <h1>🏥 REVA Health — Admin Dashboard</h1>
-    <div class="auth-box">
-      <input type="password" id="adminSecret" placeholder="Admin Secret Key" value="">
-      <button onclick="loadDashboard()">Refresh Data</button>
+  <div class="hero">
+    <div class="header">
+      <div class="brand">
+        <h1>🏥 REVA Health</h1>
+        <p>Admin dashboard · bookings, payments &amp; calendar sync</p>
+      </div>
+      <div class="auth-box">
+        <input type="password" id="adminSecret" placeholder="Admin secret key" value="" aria-label="Admin secret key">
+        <button class="btn-refresh" onclick="loadDashboard()">Refresh data</button>
+      </div>
     </div>
   </div>
 
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="label">Total Bookings</div>
-      <div class="value" id="statBookings">0</div>
+  <div class="wrap">
+    <div class="stats-grid">
+      <div class="stat-card s-blue"><div class="stat-icon">📅</div><div><div class="label">Total bookings</div><div class="value" id="statBookings">0</div></div></div>
+      <div class="stat-card s-violet"><div class="stat-icon">💳</div><div><div class="label">Total payments</div><div class="value" id="statPayments">0</div></div></div>
+      <div class="stat-card s-amber"><div class="stat-icon">⏳</div><div><div class="label">Pending calendar sync</div><div class="value" id="statPendingSync">0</div></div></div>
+      <div class="stat-card s-green"><div class="stat-icon">💰</div><div><div class="label">Total revenue</div><div class="value" id="statRevenue">₹0</div></div></div>
     </div>
-    <div class="stat-card">
-      <div class="label">Total Payments</div>
-      <div class="value" id="statPayments">0</div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Revenue over time</h3>
+        <div class="chart-box"><canvas id="revenueChart"></canvas><div class="empty-chart" id="emptyRevenue">No payments yet</div></div>
+      </div>
+      <div class="chart-card">
+        <h3>Appointment status</h3>
+        <div class="chart-box"><canvas id="statusChart"></canvas><div class="empty-chart" id="emptyStatus">No bookings yet</div></div>
+      </div>
+      <div class="chart-card">
+        <h3>Revenue by service</h3>
+        <div class="chart-box"><canvas id="serviceChart"></canvas><div class="empty-chart" id="emptyService">No paid bookings yet</div></div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="label">Pending Calendar Sync</div>
-      <div class="value" id="statPendingSync" style="color: var(--warning);">0</div>
+
+    <div class="section-title">Appointments &amp; bookings</div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Booking ID</th><th>Patient name</th><th>Phone</th><th>Service</th><th>Amount</th>
+            <th>Date &amp; time</th><th>Payment</th><th>Appt status</th><th>Calendar event</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bookingsTable">
+          <tr><td colspan="10" style="text-align:center;color:var(--muted);">Loading bookings data...</td></tr>
+        </tbody>
+      </table>
     </div>
-    <div class="stat-card">
-      <div class="label">Total Revenue</div>
-      <div class="value" id="statRevenue" style="color: var(--success);">₹0</div>
+
+    <div class="section-title">Payments &amp; transactions</div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Payment ID</th><th>Booking ID</th><th>Razorpay ID</th><th>Amount</th>
+            <th>Currency</th><th>Status</th><th>Method</th><th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody id="paymentsTable">
+          <tr><td colspan="8" style="text-align:center;color:var(--muted);">Loading payments data...</td></tr>
+        </tbody>
+      </table>
     </div>
-  </div>
-
-  <div class="section-title">
-    <span>Appointments & Bookings</span>
-  </div>
-
-  <div class="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th>Booking ID</th>
-          <th>Patient Name</th>
-          <th>Phone</th>
-          <th>Service</th>
-          <th>Amount</th>
-          <th>Date & Time</th>
-          <th>Payment</th>
-          <th>Appt Status</th>
-          <th>Calendar Event</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="bookingsTable">
-        <tr><td colspan="10" style="text-align: center; color: var(--text-muted);">Loading bookings data...</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="section-title">
-    <span>Payments & Transactions</span>
-  </div>
-
-  <div class="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th>Payment ID</th>
-          <th>Booking ID</th>
-          <th>Razorpay ID</th>
-          <th>Amount</th>
-          <th>Currency</th>
-          <th>Status</th>
-          <th>Method</th>
-          <th>Timestamp</th>
-        </tr>
-      </thead>
-      <tbody id="paymentsTable">
-        <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading payments data...</td></tr>
-      </tbody>
-    </table>
   </div>
 
   <div id="toast" class="toast"></div>
@@ -141,46 +149,33 @@
     const secretInput = document.getElementById('adminSecret');
     const savedSecret = localStorage.getItem('reva_admin_secret');
     if (savedSecret) secretInput.value = savedSecret;
+    secretInput.addEventListener('change', () => localStorage.setItem('reva_admin_secret', secretInput.value));
 
-    secretInput.addEventListener('change', () => {
-      localStorage.setItem('reva_admin_secret', secretInput.value);
-    });
+    const COLORS = { CONFIRMED: '#0284c7', CONFIRMATION_PENDING: '#f59e0b', REQUESTED: '#8b5cf6', CANCELLED: '#f43f5e', SLOT_CONFLICT_CANCELLED: '#be123c' };
+    const PALETTE = ['#0d9488', '#7c3aed', '#f59e0b', '#0284c7', '#f43f5e', '#16a34a', '#ec4899'];
+    const charts = {};
 
     function showToast(msg, isError = false) {
-      const toast = document.getElementById('toast');
-      toast.textContent = msg;
-      toast.style.background = isError ? '#dc2626' : '#0f172a';
-      toast.style.display = 'block';
-      setTimeout(() => { toast.style.display = 'none'; }, 4000);
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.background = isError ? '#dc2626' : '#0f172a';
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 4000);
     }
 
     async function loadDashboard() {
       const secret = secretInput.value.trim();
-      if (!secret) {
-        showToast('Please enter Admin Secret Key', true);
-        return;
-      }
-
+      if (!secret) { showToast('Please enter Admin Secret Key', true); return; }
       try {
-        const res = await fetch('/api/admin/bookings', {
-          headers: { 'x-admin-secret': secret }
-        });
-
-        if (res.status === 401) {
-          showToast('Unauthorized: Incorrect Secret Key', true);
-          return;
-        }
-
+        const res = await fetch('/api/admin/bookings', { headers: { 'x-admin-secret': secret } });
+        if (res.status === 401) { showToast('Unauthorized: Incorrect Secret Key', true); return; }
         const data = await res.json();
-        if (!data.success) {
-          showToast(data.error || 'Failed to fetch data', true);
-          return;
-        }
-
-        renderBookings(data.bookings || []);
-        renderPayments(data.payments || []);
-        updateStats(data.bookings || [], data.payments || []);
-
+        if (!data.success) { showToast(data.error || 'Failed to fetch data', true); return; }
+        const bookings = data.bookings || [], payments = data.payments || [];
+        renderBookings(bookings);
+        renderPayments(payments);
+        updateStats(bookings, payments);
+        renderCharts(bookings, payments);
       } catch (err) {
         showToast('Network error loading dashboard', true);
         console.error(err);
@@ -190,70 +185,112 @@
     function updateStats(bookings, payments) {
       document.getElementById('statBookings').textContent = bookings.length;
       document.getElementById('statPayments').textContent = payments.length;
+      document.getElementById('statPendingSync').textContent = bookings.filter(b => b.appointment_status === 'CONFIRMATION_PENDING').length;
+      const rev = payments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
+      document.getElementById('statRevenue').textContent = `₹${rev.toLocaleString()}`;
+    }
 
-      const pendingCount = bookings.filter(b => b.appointment_status === 'CONFIRMATION_PENDING').length;
-      document.getElementById('statPendingSync').textContent = pendingCount;
+    function drawChart(id, emptyId, hasData, config) {
+      document.getElementById(emptyId).style.display = hasData ? 'none' : 'grid';
+      if (charts[id]) charts[id].destroy();
+      const canvas = document.getElementById(id);
+      canvas.style.display = hasData ? 'block' : 'none';
+      if (!hasData || typeof Chart === 'undefined') return;
+      config.options = Object.assign({ responsive: true, maintainAspectRatio: false }, config.options);
+      charts[id] = new Chart(canvas, config);
+    }
 
-      const totalRev = payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-      document.getElementById('statRevenue').textContent = `₹${totalRev.toLocaleString()}`;
+    function renderCharts(bookings, payments) {
+      // Revenue over time (by payment date)
+      const byDay = {};
+      payments.forEach(p => {
+        const d = new Date(p.created_at);
+        const key = isNaN(d) ? String(p.created_at).slice(0, 10) : d.toISOString().slice(0, 10);
+        byDay[key] = (byDay[key] || 0) + (parseFloat(p.amount) || 0);
+      });
+      const days = Object.keys(byDay).sort();
+      const ctx = document.getElementById('revenueChart').getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 0, 240);
+      grad.addColorStop(0, 'rgba(13,148,136,.45)'); grad.addColorStop(1, 'rgba(2,132,199,.02)');
+      drawChart('revenueChart', 'emptyRevenue', days.length > 0, {
+        type: 'line',
+        data: { labels: days, datasets: [{ label: 'Revenue (₹)', data: days.map(d => byDay[d]), borderColor: '#0d9488', backgroundColor: grad, fill: true, tension: .35, pointBackgroundColor: '#fff', pointBorderColor: '#0d9488', pointBorderWidth: 2, pointRadius: 4 }] },
+        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#eef2f7' } }, x: { grid: { display: false } } } }
+      });
+
+      // Appointment status doughnut
+      const statusCount = {};
+      bookings.forEach(b => { const s = b.appointment_status || 'REQUESTED'; statusCount[s] = (statusCount[s] || 0) + 1; });
+      const sKeys = Object.keys(statusCount);
+      drawChart('statusChart', 'emptyStatus', sKeys.length > 0, {
+        type: 'doughnut',
+        data: { labels: sKeys.map(k => k.replace(/_/g, ' ').toLowerCase()), datasets: [{ data: sKeys.map(k => statusCount[k]), backgroundColor: sKeys.map((k, i) => COLORS[k] || PALETTE[i % PALETTE.length]), borderWidth: 3, borderColor: '#fff' }] },
+        options: { cutout: '62%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } } }
+      });
+
+      // Revenue by service (paid bookings)
+      const bySvc = {};
+      bookings.filter(b => b.payment_status === 'PAID').forEach(b => {
+        const n = b.service_name || 'Other';
+        bySvc[n] = (bySvc[n] || 0) + (parseFloat(b.amount) || 0);
+      });
+      const svc = Object.entries(bySvc).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      drawChart('serviceChart', 'emptyService', svc.length > 0, {
+        type: 'bar',
+        data: { labels: svc.map(s => s[0]), datasets: [{ label: 'Revenue (₹)', data: svc.map(s => s[1]), backgroundColor: svc.map((_, i) => PALETTE[i % PALETTE.length]), borderRadius: 8 }] },
+        options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: '#eef2f7' } }, y: { grid: { display: false } } } }
+      });
     }
 
     function renderBookings(bookings) {
       const tbody = document.getElementById('bookingsTable');
       if (bookings.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-muted);">No bookings recorded yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);">No bookings recorded yet.</td></tr>';
         return;
       }
-
       tbody.innerHTML = bookings.map(b => {
         const isPendingSync = b.appointment_status === 'CONFIRMATION_PENDING';
         const isPaid = b.payment_status === 'PAID';
-        
-        let apptBadgeClass = 'badge-pending';
-        if (b.appointment_status === 'CONFIRMED') apptBadgeClass = 'badge-confirmed';
-        if (b.appointment_status === 'CANCELLED' || b.appointment_status === 'SLOT_CONFLICT_CANCELLED') apptBadgeClass = 'badge-failed';
-
-        let payBadgeClass = isPaid ? 'badge-paid' : 'badge-pending';
-
+        let apptClass = 'badge-pending';
+        if (b.appointment_status === 'CONFIRMED') apptClass = 'badge-confirmed';
+        if (b.appointment_status === 'CANCELLED' || b.appointment_status === 'SLOT_CONFLICT_CANCELLED') apptClass = 'badge-failed';
+        const payClass = isPaid ? 'badge-paid' : 'badge-pending';
         return `
           <tr>
             <td><strong>${escapeHtml(b.booking_id)}</strong></td>
             <td>${escapeHtml(b.patient_name || '-')}</td>
             <td>${escapeHtml(b.phone_number || '-')}</td>
             <td>${escapeHtml(b.service_name || '-')}</td>
-            <td>₹${escapeHtml(b.amount || '-')}</td>
+            <td><strong>₹${escapeHtml(b.amount || '-')}</strong></td>
             <td>${escapeHtml(b.appointment_date)} ${escapeHtml(b.appointment_time)}</td>
-            <td><span class="badge ${payBadgeClass}">${escapeHtml(b.payment_status || 'PENDING')}</span></td>
-            <td><span class="badge ${apptBadgeClass}">${escapeHtml(b.appointment_status || 'REQUESTED')}</span></td>
-            <td>${b.calendar_event_id ? '<code>' + escapeHtml(b.calendar_event_id.substring(0, 15)) + '...</code>' : '<span style="color:var(--text-muted)">-</span>'}</td>
+            <td><span class="badge ${payClass}">${escapeHtml(b.payment_status || 'PENDING')}</span></td>
+            <td><span class="badge ${apptClass}">${escapeHtml(b.appointment_status || 'REQUESTED')}</span></td>
+            <td>${b.calendar_event_id ? '<code>' + escapeHtml(b.calendar_event_id.substring(0, 15)) + '...</code>' : '<span style="color:var(--muted)">-</span>'}</td>
             <td>
-              ${isPendingSync ? `<button class="action-btn btn-warning" onclick="retrySync('${escapeHtml(b.booking_id)}')">Retry Sync</button>` : ''}
+              ${isPendingSync ? `<button class="action-btn btn-warning" onclick="retrySync('${escapeHtml(b.booking_id)}')">Retry sync</button>` : ''}
               ${!isPendingSync && b.appointment_status !== 'CONFIRMED' ? `<button class="action-btn btn-secondary" onclick="manualConfirm('${escapeHtml(b.booking_id)}')">Confirm</button>` : ''}
             </td>
-          </tr>
-        `;
+          </tr>`;
       }).join('');
     }
 
     function renderPayments(payments) {
       const tbody = document.getElementById('paymentsTable');
       if (payments.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No payments recorded yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);">No payments recorded yet.</td></tr>';
         return;
       }
-
       tbody.innerHTML = payments.map(p => `
         <tr>
           <td><strong>${escapeHtml(p.payment_id)}</strong></td>
           <td>${escapeHtml(p.booking_id)}</td>
           <td><code>${escapeHtml(p.razorpay_payment_id || '-')}</code></td>
-          <td>₹${escapeHtml(p.amount)}</td>
+          <td><strong>₹${escapeHtml(p.amount)}</strong></td>
           <td>${escapeHtml(p.currency)}</td>
           <td><span class="badge badge-paid">${escapeHtml(p.status)}</span></td>
           <td>${escapeHtml(p.method || 'online')}</td>
           <td>${escapeHtml(p.created_at)}</td>
-        </tr>
-      `).join('');
+        </tr>`).join('');
     }
 
     async function retrySync(bookingId) {
@@ -266,15 +303,9 @@
           body: JSON.stringify({ action: 'retry_calendar_sync', bookingId })
         });
         const data = await res.json();
-        if (data.success) {
-          showToast(`Success! Calendar event synced: ${data.calendarEventId}`);
-          loadDashboard();
-        } else {
-          showToast(data.error || 'Sync failed', true);
-        }
-      } catch (err) {
-        showToast('Error executing retry sync', true);
-      }
+        if (data.success) { showToast(`Success! Calendar event synced: ${data.calendarEventId}`); loadDashboard(); }
+        else showToast(data.error || 'Sync failed', true);
+      } catch (err) { showToast('Error executing retry sync', true); }
     }
 
     async function manualConfirm(bookingId) {
@@ -287,15 +318,9 @@
           body: JSON.stringify({ action: 'update_status', bookingId, appointmentStatus: 'CONFIRMED', paymentStatus: 'PAID' })
         });
         const data = await res.json();
-        if (data.success) {
-          showToast(`Booking ${bookingId} confirmed.`);
-          loadDashboard();
-        } else {
-          showToast(data.error || 'Update failed', true);
-        }
-      } catch (err) {
-        showToast('Error confirming booking', true);
-      }
+        if (data.success) { showToast(`Booking ${bookingId} confirmed.`); loadDashboard(); }
+        else showToast(data.error || 'Update failed', true);
+      } catch (err) { showToast('Error confirming booking', true); }
     }
 
     function escapeHtml(str) {
@@ -303,7 +328,6 @@
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // Initial Load
     window.addEventListener('DOMContentLoaded', loadDashboard);
   </script>
 </body>
