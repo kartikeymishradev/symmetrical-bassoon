@@ -2104,3 +2104,55 @@ html, body {
     scroll-behavior: auto !important;
   }
 }
+
+
+/* ==========================================================================
+   CSP Extracted Inline Styles
+   ========================================================================== */
+.hero-doc-creds {
+  margin-bottom: var(--space-4);
+}
+.footer-link {
+  color: inherit;
+  text-decoration: underline;
+}
+#booking-error-alert {
+  display: none;
+  margin-bottom: 15px;
+}
+#booking-confirmation {
+  display: none;
+}
+#summary-status {
+  background: #10b981;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+#summary-meet-container {
+  display: none;
+  margin: 15px 0;
+}
+#summary-meet-link {
+  text-decoration: none;
+  text-align: center;
+}
+.whatsapp-support-container {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+  text-align: center;
+}
+.whatsapp-support-link {
+  font-size: 0.8125rem;
+  padding: 10px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none;
+}
+#widget-status-msg {
+  display: none;
+}

@@ -351,7 +351,7 @@
               </div>
             </div>
             <div class="team-body">
-              <ul class="hero-doc-creds" style="margin-bottom: var(--space-4);">
+              <ul class="hero-doc-creds">
                 <li><strong>MBBS:</strong> VMMC & Safdarjung Hospital, Delhi</li>
                 <li><strong>MD Medicine:</strong> RML Hospital, Delhi</li>
                 <li><strong>Experience:</strong> AIIMS, Delhi</li>
@@ -379,7 +379,7 @@
               </div>
             </div>
             <div class="team-body">
-              <ul class="hero-doc-creds" style="margin-bottom: var(--space-4);">
+              <ul class="hero-doc-creds">
                 <li><strong>Qualification:</strong> B.Pharm</li>
                 <li><strong>Specialisation:</strong> Diploma in Applied Diet & Nutrition</li>
                 <li><strong>Role:</strong> Nutrition & Wellness Support</li>
@@ -666,8 +666,8 @@
         
         <div class="footer-contacts">
           <div class="contact-meta"><strong>Instagram:</strong> @reva.health</div>
-          <div class="contact-meta"><strong>Website:</strong> <a href="https://www.revahealth.in/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">www.revahealth.in</a></div>
-          <div class="contact-meta"><strong>WhatsApp:</strong> <a href="https://wa.me/918920477960?text=Hello%20REVA%20Health%2C%20I%20would%20like%20to%20book%20a%20consultation." target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">+91 8920477960</a></div>
+          <div class="contact-meta"><strong>Website:</strong> <a href="https://www.revahealth.in/" target="_blank" rel="noopener noreferrer" class="footer-link">www.revahealth.in</a></div>
+          <div class="contact-meta"><strong>WhatsApp:</strong> <a href="https://wa.me/918920477960?text=Hello%20REVA%20Health%2C%20I%20would%20like%20to%20book%20a%20consultation." target="_blank" rel="noopener noreferrer" class="footer-link">+91 8920477960</a></div>
         </div>
       </div>
 
@@ -769,7 +769,7 @@
           <textarea id="form-notes" class="form-control" rows="2" placeholder="Mention any recent blood test results or primary dietary preferences"></textarea>
         </div>
 
-        <div id="booking-error-alert" class="widget-status error" style="display: none; margin-bottom: 15px;" aria-live="polite"></div>
+        <div id="booking-error-alert" class="widget-status error" aria-live="polite"></div>
 
         <div class="modal-footer">
           <button type="submit" id="booking-submit-btn" class="btn btn-accent btn-block">
@@ -779,7 +779,7 @@
       </form>
 
       <!-- Confirmation View -->
-      <div id="booking-confirmation" class="modal-body confirmation-panel" style="display: none;">
+      <div id="booking-confirmation" class="modal-body confirmation-panel">
         <div class="confirmation-icon">[+]</div>
         <h3 class="confirmation-heading">Appointment Confirmed</h3>
         <p class="confirmation-sub">Your consultation appointment has been confirmed and locked in our calendar.</p>
@@ -791,11 +791,11 @@
           <div class="summary-row"><strong>Phone:</strong> <span id="summary-phone"></span></div>
           <div class="summary-row"><strong>Selected Plan:</strong> <span id="summary-package"></span></div>
           <div class="summary-row"><strong>Date & Time:</strong> <span id="summary-datetime"></span></div>
-          <div class="summary-row"><strong>Status:</strong> <span id="summary-status" class="badge" style="background:#10b981; color:#fff; padding:2px 8px; border-radius:4px; font-weight:600;">CONFIRMED</span></div>
+          <div class="summary-row"><strong>Status:</strong> <span id="summary-status" class="badge">CONFIRMED</span></div>
         </div>
 
-        <div id="summary-meet-container" style="display: none; margin: 15px 0;">
-          <a id="summary-meet-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-accent btn-block" style="text-decoration: none; text-align: center;">
+        <div id="summary-meet-container">
+          <a id="summary-meet-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-accent btn-block">
             Join Google Meet Consultation
           </a>
         </div>
@@ -853,13 +853,13 @@
           </button>
         </form>
 
-        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-light); text-align: center;">
-          <a href="https://wa.me/918920477960?text=Hello%20REVA%20Health%2C%20I%20would%20like%20to%20book%20a%20consultation." target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-block" style="font-size: 0.8125rem; padding: 10px 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none;">
+        <div class="whatsapp-support-container">
+          <a href="https://wa.me/918920477960?text=Hello%20REVA%20Health%2C%20I%20would%20like%20to%20book%20a%20consultation." target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-block whatsapp-support-link">
             <span>Chat on WhatsApp (+91 8920477960)</span>
           </a>
         </div>
 
-        <div id="widget-status-msg" class="widget-status" style="display: none;" aria-live="polite"></div>
+        <div id="widget-status-msg" class="widget-status" aria-live="polite"></div>
       </div>
     </div>
   </div>
