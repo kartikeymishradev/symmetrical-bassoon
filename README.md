@@ -122,3 +122,8 @@ Run the test suite:
 ```bash
 node scratch/test_s1_s10.js
 ```
+
+
+## Known Architecture Limitations
+* **Admin Authorization (RBAC)**: The /api/admin/* endpoints currently rely on a single, static shared secret (ADMIN_SECRET_KEY). This does not provide per-user attribution, audit logs, or fine-grained revocation (RBAC). It is recommended to use an IP Allowlist via Vercel Edge Middleware or Firewall to restrict access.
+* **Rate Limiting**: The built-in rate limiter (lib/ratelimit.js) is an in-memory, sliding-window implementation. In a serverless environment like Vercel, this state is per-instance and does not persist across horizontal scaling. It acts as a basic buffer but does not provide bulletproof DDoS protection and may risk memory exhaustion (OOM) under massive spoofed-IP attacks. A persistent, centralized store (e.g., Redis / Vercel KV) is recommended for true global rate limiting.\n
