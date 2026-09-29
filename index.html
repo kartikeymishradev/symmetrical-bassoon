@@ -3,23 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Evidence-based medical consultation and structured health management led by Dr. Rishabh Jain, MD Medicine. Specialized care for diabetes, hypertension, and general health.">
+  <meta name="description" content="Evidence-based medical consultation and health management by Dr. Rishabh Jain, MD Medicine. Specialized care for diabetes, hypertension, and general wellness.">
   <title>REVA Health | Medical Care & Personalised Nutrition</title>
-  <link rel="canonical" href="https://www.docatdoors.com/">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://www.revahealth.in/">
 
   <!-- Open Graph / Social Media -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="REVA Health | Medical Care & Personalised Nutrition">
   <meta property="og:description" content="Evidence-based medical consultation and structured health management led by Dr. Rishabh Jain, MD Medicine.">
-  <meta property="og:url" content="https://www.docatdoors.com/">
+  <meta property="og:url" content="https://www.revahealth.in/">
   <meta property="og:site_name" content="REVA Health">
-  <meta property="og:image" content="https://www.docatdoors.com/assets/icons/apple-touch-icon.png">
+  <meta property="og:image" content="https://www.revahealth.in/assets/icons/apple-touch-icon.png">
 
   <!-- Twitter Card Metadata -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="REVA Health | Medical Care & Personalised Nutrition">
   <meta name="twitter:description" content="Evidence-based medical consultation and structured health management led by Dr. Rishabh Jain, MD Medicine.">
-  <meta name="twitter:image" content="https://www.docatdoors.com/assets/icons/apple-touch-icon.png">
+  <meta name="twitter:image" content="https://www.revahealth.in/assets/icons/apple-touch-icon.png">
 
   <!-- Favicons -->
   <link rel="icon" type="image/svg+xml" href="/assets/icons/favicon.svg">
@@ -40,35 +41,50 @@
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "MedicalOrganization",
-        "@id": "https://www.docatdoors.com/#organization",
+        "@type": "MedicalBusiness",
+        "@id": "https://www.revahealth.in/#organization",
         "name": "REVA Health",
-        "url": "https://www.docatdoors.com/",
-        "logo": "https://www.docatdoors.com/assets/icons/favicon-32x32.png",
+        "url": "https://www.revahealth.in/",
+        "logo": "https://www.revahealth.in/assets/icons/favicon-32x32.png",
         "description": "Evidence-based medical consultation and structured health management online platform.",
-        "contactPoint": {
-          "@type": "ContactPoint",
-          "telephone": "+91-8920477960",
-          "contactType": "Customer Support",
-          "availableLanguage": ["English", "Hindi"]
-        }
+        "telephone": "+91-8920477960",
+        "priceRange": "₹299 - ₹999",
+        "medicalSpecialty": [
+          "Diabetes",
+          "Hypertension",
+          "Weight Management",
+          "PCOS",
+          "Thyroid"
+        ]
       },
       {
         "@type": "Physician",
-        "@id": "https://www.docatdoors.com/#physician",
+        "@id": "https://www.revahealth.in/#physician",
         "name": "Dr. Rishabh Jain",
         "jobTitle": "Consultant Physician",
         "medicalSpecialty": "GeneralMedicine",
-        "description": "MBBS from VMMC & Safdarjung Hospital, MD Medicine from RML Hospital, clinical experience at AIIMS. Specializes in diabetes, hypertension, rheumatology, and general medicine.",
-        "alumniOf": [
-          "Vardhman Mahavir Medical College & Safdarjung Hospital",
-          "Dr. RML Hospital",
-          "All India Institute of Medical Sciences (AIIMS)"
-        ],
-        "knowsLanguage": ["English", "Hindi"],
+        "description": "MBBS, MD Medicine with expertise in diabetes, hypertension, and internal medicine.",
         "worksFor": {
-          "@id": "https://www.docatdoors.com/#organization"
+          "@id": "https://www.revahealth.in/#organization"
         }
+      },
+      {
+        "@type": "Service",
+        "name": "Doctor Consultation",
+        "provider": {"@id": "https://www.revahealth.in/#organization"},
+        "offers": {"@type": "Offer", "price": "400", "priceCurrency": "INR"}
+      },
+      {
+        "@type": "Service",
+        "name": "Nutrition Consultation",
+        "provider": {"@id": "https://www.revahealth.in/#organization"},
+        "offers": {"@type": "Offer", "price": "299", "priceCurrency": "INR"}
+      },
+      {
+        "@type": "Service",
+        "name": "Doctor + Nutrition Combo Package",
+        "provider": {"@id": "https://www.revahealth.in/#organization"},
+        "offers": {"@type": "Offer", "price": "999", "priceCurrency": "INR"}
       }
     ]
   }
@@ -326,7 +342,7 @@
           <!-- Card 1: Doctor Profile -->
           <div class="team-card">
             <div class="team-header">
-              <img src="assets/images/dr-rishabh-jain.jpg" alt="Dr. Rishabh Jain, MBBS, MD Medicine" class="team-avatar" width="120" height="152">
+              <img src="assets/images/dr-rishabh-jain.jpg" alt="Dr. Rishabh Jain, MBBS, MD Medicine" class="team-avatar" width="120" height="152" loading="lazy">
               <div class="team-identity">
                 <span class="meta-label">PRIMARY MEDICAL PHYSICIAN</span>
                 <h3 class="team-name">Dr. Rishabh Jain</h3>
@@ -650,7 +666,7 @@
         
         <div class="footer-contacts">
           <div class="contact-meta"><strong>Instagram:</strong> @reva.health</div>
-          <div class="contact-meta"><strong>Website:</strong> <a href="https://www.docatdoors.com/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">docatdoors.com</a></div>
+          <div class="contact-meta"><strong>Website:</strong> <a href="https://www.revahealth.in/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">www.revahealth.in</a></div>
           <div class="contact-meta"><strong>WhatsApp:</strong> <a href="https://wa.me/918920477960?text=Hello%20REVA%20Health%2C%20I%20would%20like%20to%20book%20a%20consultation." target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">+91 8920477960</a></div>
         </div>
       </div>
