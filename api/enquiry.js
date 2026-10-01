@@ -10,6 +10,7 @@
 
 const https = require('https');
 const { appendBooking, updateBookingTelegramStatus, getServiceAmount } = require('../lib/sheets');
+const { buildWhatsAppLink } = require('../lib/whatsapp-link');
 const { setCorsHeaders } = require('../lib/cors');
 const { checkRateLimit } = require('../lib/ratelimit');
 
