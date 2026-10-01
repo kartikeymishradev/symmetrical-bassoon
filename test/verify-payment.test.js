@@ -39,12 +39,15 @@ const sheetsPath = require.resolve('../lib/sheets');
 const razorpayPath = require.resolve('../lib/razorpay');
 const confirmPath = require.resolve('../lib/confirm-booking');
 const whatsappPath = require.resolve('../lib/whatsapp');
+const mockEmail = { sendBookingConfirmationEmail: mock.fn() };
+const emailPath = require.resolve('../lib/email');
 const httpsPath = 'https';
 
 require.cache[sheetsPath] = { id: sheetsPath, filename: sheetsPath, loaded: true, exports: mockSheets };
 require.cache[razorpayPath] = { id: razorpayPath, filename: razorpayPath, loaded: true, exports: mockRazorpay };
 require.cache[confirmPath] = { id: confirmPath, filename: confirmPath, loaded: true, exports: mockConfirmBooking };
 require.cache[whatsappPath] = { id: whatsappPath, filename: whatsappPath, loaded: true, exports: mockWhatsapp };
+require.cache[emailPath] = { id: emailPath, filename: emailPath, loaded: true, exports: mockEmail };
 require.cache[httpsPath] = { id: httpsPath, filename: httpsPath, loaded: true, exports: mockHttps };
 
 const verifyPaymentHandler = require('../api/verify-payment');
@@ -57,6 +60,7 @@ describe('verify-payment Security Hardening (P0-1)', () => {
     mockRazorpay.verifyPaymentSignature.mock.resetCalls();
     mockConfirmBooking.confirmBooking.mock.resetCalls();
     mockWhatsapp.sendWhatsAppConfirmation.mock.resetCalls();
+      mockEmail.sendBookingConfirmationEmail.mock.resetCalls();
     mockHttps.request.mock.resetCalls();
   });
 
