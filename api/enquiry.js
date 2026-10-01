@@ -141,7 +141,13 @@ module.exports = async function handler(req, res) {
 
     // Format Telegram Message — escape all user input for HTML mode
     const escHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const messageText = `NEW REVA HEALTH ENQUIRY (${escHtml(bookingId)})\n\n` +
+    
+    const waMsg = `Hi ${cleanName}, thank you for your enquiry with REVA Health regarding ${cleanPackage || 'General Consultation'}. This is REVA Health — I'd like to help you book your consultation. When would be a good time to talk?`;
+    const waLink = buildWhatsAppLink(cleanPhone, waMsg);
+    const waHtml = waLink ? `\n💬 <a href="${waLink}">Chat with ${escHtml(cleanName)} on WhatsApp</a>\n` : '';
+
+    const messageText = `🔔 <b>NEW REVA HEALTH ENQUIRY</b> (${escHtml(bookingId)})\n` +
+      waHtml + `\n` +
       `Name: ${escHtml(cleanName)}\n` +
       `Phone: ${escHtml(cleanPhone)}\n` +
       `Email: ${escHtml(cleanEmail || 'N/A')}\n` +
