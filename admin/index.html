@@ -74,7 +74,15 @@
     .toast { position: fixed; bottom: 20px; right: 20px; background: #0f172a; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: .9rem; display: none; z-index: 1000; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
   </style>
 </head>
-<body>
+<body style="overflow: hidden; visibility: hidden;">
+  <div id="login-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0b0b; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: 'Plus Jakarta Sans', sans-serif;">
+    <h2 style="margin-bottom: 24px; font-weight: 800; font-size: 24px;">REVA Health Secure Admin</h2>
+    <input type="email" id="admin-email" placeholder="Admin Email" style="padding: 14px 16px; margin-bottom: 12px; border-radius: 8px; border: 1px solid #333; width: 300px; font-size: 15px; background: #1a1a1a; color: white; outline: none;" />
+    <input type="password" id="admin-pass" placeholder="Admin Secret Key" style="padding: 14px 16px; margin-bottom: 24px; border-radius: 8px; border: 1px solid #333; width: 300px; font-size: 15px; background: #1a1a1a; color: white; outline: none;" />
+    <button onclick="performLogin()" style="padding: 14px 24px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 300px; font-size: 16px; transition: background 0.2s;">Unlock Dashboard</button>
+    <p id="login-error" style="color: #f43f5e; margin-top: 16px; display: none; font-weight: 500;">Incorrect Email or Secret Key</p>
+  </div>
+
 
   <div class="hero">
     <div class="header">

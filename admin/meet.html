@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REVA Health ?" Send Meeting Link</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: #f1f5f9; color: #0f172a; overflow: hidden; visibility: hidden; }
+    #login-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0b0b; z-index: 99999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;
+    }
+    input { outline: none; }
+    .container { max-width: 600px; margin: 60px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    h1 { margin-top: 0; font-size: 20px; color: #0f766e; }
+    .info { margin-bottom: 20px; font-size: 15px; color: #475569; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
+    label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; }
+    .input-box { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 24px; font-size: 15px; box-sizing: border-box; }
+    .btn-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn { flex: 1; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; color: white; transition: opacity 0.2s; text-align: center; text-decoration: none; }
+    .btn:hover { opacity: 0.9; }
+    .btn-email { background: #0284c7; }
+    .btn-wa { background: #16a34a; }
+    #status { margin-top: 20px; font-weight: 500; text-align: center; display: none; }
+  </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.style.visibility = 'visible';
+      const savedEmail = localStorage.getItem('reva_admin_email');
+      const savedPass = localStorage.getItem('reva_admin_secret');
+      if (savedEmail && savedPass) {
+        document.getElementById('admin-email').value = savedEmail;
+        document.getElementById('admin-pass').value = savedPass;
+        performLogin(true);
+      }
+      populateData();
+    });
+
+    async function performLogin(silent = false) {
+      const email = document.getElementById('admin-email').value.trim();
+      const pass = document.getElementById('admin-pass').value.trim();
+      if (!email || !pass) {
+        if (!silent) document.getElementById('login-error').style.display = 'block';
+        return;
+      }
+      
+      const btn = document.querySelector('#login-overlay button');
+      const oldText = btn.innerText;
+      btn.innerText = 'Verifying...';
+      document.getElementById('login-error').style.display = 'none';
+
+      try {
+        const res = await fetch('/api/admin/bookings', {
+          headers: { 'x-admin-secret': pass, 'x-admin-email': email }
+        });
+
+        if (res.ok || res.status === 200) {
+          localStorage.setItem('reva_admin_email', email);
+          localStorage.setItem('reva_admin_secret', pass);
+          document.getElementById('login-overlay').style.display = 'none';
+          document.body.style.overflow = 'auto';
+        } else {
+          throw new Error('Auth failed');
+        }
+      } catch (err) {
+        if (!silent) {
+          document.getElementById('login-error').style.display = 'block';
+          localStorage.removeItem('reva_admin_email');
+          localStorage.removeItem('reva_admin_secret');
+        }
+      } finally {
+        btn.innerText = oldText;
+      }
+    }
+
+    function populateData() {
+      const params = new URLSearchParams(window.location.search);
+      document.getElementById('b-id').innerText = params.get('id') || 'Unknown';
+      document.getElementById('p-name').innerText = params.get('name') || 'Patient';
+      document.getElementById('p-pkg').innerText = params.get('package') || 'Consultation';
+    }
+
+    async function sendEmail() {
+      const meetLink = document.getElementById('meet-link').value.trim();
+      if (!meetLink) return alert('Please enter a meeting link first!');
+
+      const btn = document.getElementById('btn-email');
+      btn.innerText = 'Sending...';
+      btn.disabled = true;
+      const statusEl = document.getElementById('status');
+      statusEl.style.display = 'block';
+      statusEl.style.color = '#0284c7';
+      statusEl.innerText = 'Sending email...';
+
+      try {
+        const res = await fetch('/api/admin/send-meet', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-email': localStorage.getItem('reva_admin_email'),
+            'x-admin-secret': localStorage.getItem('reva_admin_secret')
+          },
+          body: JSON.stringify({
+            bookingId: new URLSearchParams(window.location.search).get('id'),
+            meetingLink: meetLink
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          statusEl.style.color = '#16a34a';
+          statusEl.innerText = '✅ Email sent successfully!';
+        } else {
+          throw new Error(data.error || 'Failed to send');
+        }
+      } catch (err) {
+        statusEl.style.color = '#f43f5e';
+        statusEl.innerText = '❌ Error: ' + err.message;
+      } finally {
+        btn.innerText = '✉️ Send via Email';
+        btn.disabled = false;
+      }
+    }
+
+    function openWhatsApp() {
+      const meetLink = document.getElementById('meet-link').value.trim();
+      if (!meetLink) return alert('Please enter a meeting link first!');
+
+      const params = new URLSearchParams(window.location.search);
+      let phone = params.get('phone') || '';
+      const name = params.get('name') || 'Patient';
+      
+      phone = phone.replace(/[^0-9]/g, '');
+      if (phone.length === 10) phone = '91' + phone;
+
+      const msg = `Hi ${name}, your REVA Health consultation is confirmed. Here is your meeting link: ${meetLink}`;
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
+    }
+  </script>
+</head>
+<body>
+  <div id="login-overlay">
+    <h2 style="margin-bottom: 24px; font-weight: 800; font-size: 24px;">REVA Health Secure Admin</h2>
+    <input type="email" id="admin-email" placeholder="Admin Email" style="padding: 14px 16px; margin-bottom: 12px; border-radius: 8px; border: 1px solid #333; width: 300px; font-size: 15px; background: #1a1a1a; color: white; outline: none;" />
+    <input type="password" id="admin-pass" placeholder="Admin Secret Key" style="padding: 14px 16px; margin-bottom: 24px; border-radius: 8px; border: 1px solid #333; width: 300px; font-size: 15px; background: #1a1a1a; color: white; outline: none;" />
+    <button onclick="performLogin()" style="padding: 14px 24px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 300px; font-size: 16px; transition: background 0.2s;">Unlock Page</button>
+    <p id="login-error" style="color: #f43f5e; margin-top: 16px; display: none; font-weight: 500;">Incorrect Email or Secret Key</p>
+  </div>
+
+  <div class="container">
+    <h1>Share Meeting Link</h1>
+    
+    <div class="info">
+      <strong>Booking ID:</strong> <span id="b-id"></span><br>
+      <strong>Patient:</strong> <span id="p-name"></span><br>
+      <strong>Package:</strong> <span id="p-pkg"></span>
+    </div>
+
+    <label for="meet-link">Zoom or Google Meet Link:</label>
+    <input type="url" id="meet-link" class="input-box" placeholder="https://zoom.us/j/123... or https://meet.google.com/..." />
+
+    <div class="btn-group">
+      <button id="btn-email" class="btn btn-email" onclick="sendEmail()">✉️ Send via Email (Auto)</button>
+      <button class="btn btn-wa" onclick="openWhatsApp()">💬 Send via WhatsApp (Manual)</button>
+    </div>
+    
+    <div id="status"></div>
+  </div>
+</body>
+</html>
