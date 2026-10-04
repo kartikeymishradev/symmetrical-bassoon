@@ -20,7 +20,7 @@
     .brand h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
     .brand p { font-size: 0.85rem; opacity: .8; }
     .auth-box { display: flex; gap: 10px; align-items: center; background: rgba(255,255,255,.15); padding: 8px; border-radius: 12px; backdrop-filter: blur(6px); }
-    input[type="password"] { padding: 9px 12px; border: none; border-radius: 8px; font-size: .9rem; width: 220px; background: rgba(255,255,255,.95); color: var(--text); }
+    input[type="password"], input[type="email"] { padding: 9px 12px; border: none; border-radius: 8px; font-size: .9rem; width: 220px; background: rgba(255,255,255,.95); color: var(--text); }
     button { border: none; cursor: pointer; font-weight: 600; border-radius: 8px; font-size: .88rem; transition: transform .15s, filter .15s; color: #fff; }
     button:hover { filter: brightness(1.08); }
     button:active { transform: scale(.97); }
@@ -72,17 +72,19 @@
     .btn-secondary { background: linear-gradient(135deg, #0d9488, #0284c7); }
 
     .toast { position: fixed; bottom: 20px; right: 20px; background: #0f172a; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: .9rem; display: none; z-index: 1000; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+    
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
+    .tab-btn { background: transparent; color: var(--muted); font-size: 1rem; padding: 8px 16px; border-radius: 8px; transition: 0.2s; }
+    .tab-btn.active { background: var(--sky); color: white; }
+    .tab-btn:hover:not(.active) { background: #e2e8f0; color: var(--text); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .input-field { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; }
+    .card { background: var(--card); border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .card h2 { margin-bottom: 16px; font-size: 1.1rem; }
   </style>
 </head>
-<body style="overflow: hidden; visibility: hidden;">
-  <div id="login-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0b0b; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: 'Plus Jakarta Sans', sans-serif;">
-    <h2 style="margin-bottom: 24px; font-weight: 800; font-size: 24px;">REVA Health Secure Admin</h2>
-    <input type="email" id="admin-email" placeholder="Admin Email" style="padding: 14px 16px; margin-bottom: 12px; border-radius: 8px; border: 1px solid #333; width: 300px; font-size: 15px; background: #1a1a1a; color: white; outline: none;" />
-    <input type="password" id="admin-pass" placeholder="Admin Secret Key" style="padding: 14px 16px; margin-bottom: 24px; border-radius: 8px; border: 1px solid #333; width: 300px; font-size: 15px; background: #1a1a1a; color: white; outline: none;" />
-    <button onclick="performLogin()" style="padding: 14px 24px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 300px; font-size: 16px; transition: background 0.2s;">Unlock Dashboard</button>
-    <p id="login-error" style="color: #f43f5e; margin-top: 16px; display: none; font-weight: 500;">Incorrect Email or Secret Key</p>
-  </div>
-
+<body>
 
   <div class="hero">
     <div class="header">
@@ -91,8 +93,9 @@
         <p>Admin dashboard · bookings, payments &amp; calendar sync</p>
       </div>
       <div class="auth-box">
-        <input type="password" id="adminSecret" placeholder="Admin secret key" value="" aria-label="Admin secret key">
-        <button class="btn-refresh" onclick="loadDashboard()">Refresh data</button>
+        <input type="email" id="adminEmail" placeholder="Admin email (optional)" aria-label="Admin email">
+        <input type="password" id="adminSecret" placeholder="Admin secret key" aria-label="Admin secret key">
+        <button class="btn-refresh" onclick="loadDashboard()">Connect &amp; Load</button>
       </div>
     </div>
   </div>
@@ -120,48 +123,147 @@
       </div>
     </div>
 
-    <div class="section-title">Appointments &amp; bookings</div>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Booking ID</th><th>Patient name</th><th>Phone</th><th>Service</th><th>Amount</th>
-            <th>Date &amp; time</th><th>Payment</th><th>Appt status</th><th>Calendar event</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="bookingsTable">
-          <tr><td colspan="10" style="text-align:center;color:var(--muted);">Loading bookings data...</td></tr>
-        </tbody>
-      </table>
+    <div class="tabs">
+      <button class="tab-btn active" id="btn-tab-bookings" onclick="switchTab('tab-bookings')">Bookings</button>
+      <button class="tab-btn" id="btn-tab-payments" onclick="switchTab('tab-payments')">Payments</button>
+      <button class="tab-btn" id="btn-tab-alerts" onclick="switchTab('tab-alerts')">Refund &amp; Conflicts Alerts</button>
+      <button class="tab-btn" id="btn-tab-settings" onclick="switchTab('tab-settings')">Settings</button>
     </div>
 
-    <div class="section-title">Payments &amp; transactions</div>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Payment ID</th><th>Booking ID</th><th>Razorpay ID</th><th>Amount</th>
-            <th>Currency</th><th>Status</th><th>Method</th><th>Timestamp</th>
-          </tr>
-        </thead>
-        <tbody id="paymentsTable">
-          <tr><td colspan="8" style="text-align:center;color:var(--muted);">Loading payments data...</td></tr>
-        </tbody>
-      </table>
+    <!-- Bookings Tab -->
+    <div id="tab-bookings" class="tab-content active">
+      <div class="section-title">Appointments &amp; bookings</div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Booking ID</th><th>Patient name</th><th>Phone</th><th>Service</th><th>Amount</th>
+              <th>Date &amp; time</th><th>Payment</th><th>Appt status</th><th>Calendar event</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="bookingsTable">
+            <tr><td colspan="10" style="text-align:center;color:var(--muted);">Connect using credentials above to load bookings.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Payments Tab -->
+    <div id="tab-payments" class="tab-content">
+      <div class="section-title">Payments &amp; transactions</div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Payment ID</th><th>Booking ID</th><th>Razorpay ID</th><th>Amount</th>
+              <th>Currency</th><th>Status</th><th>Method</th><th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="paymentsTable">
+            <tr><td colspan="8" style="text-align:center;color:var(--muted);">No payments recorded yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Alerts Tab -->
+    <div id="tab-alerts" class="tab-content">
+      <div class="card">
+        <h2>Action Required: Potential Refunds</h2>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Booking ID</th>
+                <th>Patient</th>
+                <th>Phone</th>
+                <th>Amount</th>
+                <th>Conflict Reason</th>
+              </tr>
+            </thead>
+            <tbody id="alertsTable">
+              <tr><td colspan="5" style="text-align:center;color:var(--muted);">No alerts</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="tab-settings" class="tab-content">
+      <div class="card">
+        <h2>Business Hours</h2>
+        <div style="display: grid; gap: 1rem; max-width: 300px;">
+          <div><label>Start Time (HH:MM)</label><input type="time" id="set-start" class="input-field" /></div>
+          <div><label>End Time (HH:MM)</label><input type="time" id="set-end" class="input-field" /></div>
+          <div><label>Working Days (comma separated)</label><input type="text" id="set-days" class="input-field" placeholder="mon,tue,wed,thu,fri,sat" /></div>
+          <div><label>Lead Time (Hours)</label><input type="number" id="set-lead" class="input-field" placeholder="1" /></div>
+          <button class="btn btn-secondary" onclick="saveSettings()">Save Working Hours</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top: 1rem;">
+        <h2>Service Pricing</h2>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Service Name</th>
+                <th>Current Price</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="servicesTable">
+              <tr><td colspan="3" style="text-align:center;color:var(--muted);">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Update Status Modal -->
+  <div id="statusModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:2rem; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:100; border-radius:12px; width:350px;">
+    <h3 style="margin-top:0;">Update Booking Status</h3>
+    <input type="hidden" id="statusModalBookingId" />
+    <div style="margin-bottom:1rem;">
+      <label>Appointment Status</label>
+      <select id="modalApptStatus" class="input-field">
+        <option value="">--Select--</option>
+        <option value="REQUESTED">REQUESTED</option>
+        <option value="CONFIRMATION_PENDING">CONFIRMATION_PENDING</option>
+        <option value="CONFIRMED">CONFIRMED</option>
+        <option value="CANCELLED">CANCELLED</option>
+      </select>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label>Payment Status</label>
+      <select id="modalPayStatus" class="input-field">
+        <option value="">--Select--</option>
+        <option value="PENDING">PENDING</option>
+        <option value="PAID">PAID</option>
+        <option value="FAILED">FAILED</option>
+        <option value="REFUNDED">REFUNDED</option>
+      </select>
+    </div>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="document.getElementById('statusModal').style.display='none'; document.getElementById('statusModalBackdrop').style.display='none';">Cancel</button>
+      <button class="btn" onclick="submitUpdateStatus()">Save</button>
     </div>
   </div>
+  <div id="statusModalBackdrop" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99;" onclick="document.getElementById('statusModal').style.display='none'; this.style.display='none';"></div>
 
   <div id="toast" class="toast"></div>
 
   <script>
-    const secretInput = document.getElementById('adminSecret');
-    const savedSecret = localStorage.getItem('reva_admin_secret');
-    if (savedSecret) secretInput.value = savedSecret;
-    secretInput.addEventListener('change', () => localStorage.setItem('reva_admin_secret', secretInput.value));
-
-    const COLORS = { CONFIRMED: '#0284c7', CONFIRMATION_PENDING: '#f59e0b', REQUESTED: '#8b5cf6', CANCELLED: '#f43f5e', SLOT_CONFLICT_CANCELLED: '#be123c' };
-    const PALETTE = ['#0d9488', '#7c3aed', '#f59e0b', '#0284c7', '#f43f5e', '#16a34a', '#ec4899'];
-    const charts = {};
+    
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      document.getElementById('btn-' + tabId).classList.add('active');
+      if (tabId === 'tab-settings') loadSettings();
+    }
 
     function showToast(msg, isError = false) {
       const t = document.getElementById('toast');
@@ -171,19 +273,58 @@
       setTimeout(() => { t.style.display = 'none'; }, 4000);
     }
 
+    const secretInput = document.getElementById('adminSecret');
+    const emailInput = document.getElementById('adminEmail');
+    
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedSecret = sessionStorage.getItem('reva_admin_secret');
+      const savedEmail = sessionStorage.getItem('reva_admin_email');
+      if (savedSecret) secretInput.value = savedSecret;
+      if (savedEmail) emailInput.value = savedEmail;
+      if (savedSecret) loadDashboard();
+    });
+
+    function getAuthHeaders() {
+      return {
+        'x-admin-secret': sessionStorage.getItem('reva_admin_secret') || '',
+        'x-admin-email': sessionStorage.getItem('reva_admin_email') || ''
+      };
+    }
+
+    const COLORS = { CONFIRMED: '#0284c7', CONFIRMATION_PENDING: '#f59e0b', REQUESTED: '#8b5cf6', CANCELLED: '#f43f5e', SLOT_CONFLICT_CANCELLED: '#be123c' };
+    const PALETTE = ['#0d9488', '#7c3aed', '#f59e0b', '#0284c7', '#f43f5e', '#16a34a', '#ec4899'];
+    const charts = {};
+
     async function loadDashboard() {
       const secret = secretInput.value.trim();
+      const email = emailInput.value.trim();
       if (!secret) { showToast('Please enter Admin Secret Key', true); return; }
+      
+      sessionStorage.setItem('reva_admin_secret', secret);
+      sessionStorage.setItem('reva_admin_email', email);
+
       try {
-        const res = await fetch('/api/admin/bookings', { headers: { 'x-admin-secret': secret } });
-        if (res.status === 401) { showToast('Unauthorized: Incorrect Secret Key', true); return; }
+        const res = await fetch('/api/admin/bookings', { headers: getAuthHeaders() });
+        if (res.status === 401) { showToast('Unauthorized: Incorrect credentials', true); return; }
         const data = await res.json();
         if (!data.success) { showToast(data.error || 'Failed to fetch data', true); return; }
+        
         const bookings = data.bookings || [], payments = data.payments || [];
         renderBookings(bookings);
         renderPayments(payments);
+        
+        const alerts = bookings.filter(b => b.appointment_status === 'PAID_SLOT_CONFLICT' || b.appointment_status === 'SLOT_EXPIRED');
+        const alertBody = document.getElementById('alertsTable');
+        if (alertBody) {
+          if (alerts.length === 0) alertBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);">No alerts</td></tr>';
+          else alertBody.innerHTML = alerts.map(b => '<tr><td>'+escapeHtml(b.booking_id)+'</td><td>'+escapeHtml(b.patient_name)+'</td><td>'+escapeHtml(b.phone_number)+'</td><td>₹'+escapeHtml(b.amount)+'</td><td style="color:var(--failed);">'+escapeHtml(b.appointment_status)+'</td></tr>').join('');
+        }
+        
+        if (document.getElementById('tab-settings').classList.contains('active')) loadSettings();
+        
         updateStats(bookings, payments);
         renderCharts(bookings, payments);
+        showToast('Dashboard loaded');
       } catch (err) {
         showToast('Network error loading dashboard', true);
         console.error(err);
@@ -209,7 +350,6 @@
     }
 
     function renderCharts(bookings, payments) {
-      // Revenue over time (by payment date)
       const byDay = {};
       payments.forEach(p => {
         const d = new Date(p.created_at);
@@ -226,7 +366,6 @@
         options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#eef2f7' } }, x: { grid: { display: false } } } }
       });
 
-      // Appointment status doughnut
       const statusCount = {};
       bookings.forEach(b => { const s = b.appointment_status || 'REQUESTED'; statusCount[s] = (statusCount[s] || 0) + 1; });
       const sKeys = Object.keys(statusCount);
@@ -236,7 +375,6 @@
         options: { cutout: '62%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } } }
       });
 
-      // Revenue by service (paid bookings)
       const bySvc = {};
       bookings.filter(b => b.payment_status === 'PAID').forEach(b => {
         const n = b.service_name || 'Other';
@@ -276,10 +414,107 @@
             <td>${b.calendar_event_id ? '<code>' + escapeHtml(b.calendar_event_id.substring(0, 15)) + '...</code>' : '<span style="color:var(--muted)">-</span>'}</td>
             <td>
               ${isPendingSync ? `<button class="action-btn btn-warning" onclick="retrySync('${escapeHtml(b.booking_id)}')">Retry sync</button>` : ''}
-              ${!isPendingSync && b.appointment_status !== 'CONFIRMED' ? `<button class="action-btn btn-secondary" onclick="manualConfirm('${escapeHtml(b.booking_id)}')">Confirm</button>` : ''}
+              <button class="action-btn" onclick="openUpdateModal('${escapeHtml(b.booking_id)}')">Update Status</button>
+              <button class="action-btn btn-secondary" onclick="resendEmail('${escapeHtml(b.booking_id)}')">Resend Email</button>
             </td>
           </tr>`;
       }).join('');
+    }
+
+    function openUpdateModal(bookingId) {
+      document.getElementById('statusModalBookingId').value = bookingId;
+      document.getElementById('modalApptStatus').value = '';
+      document.getElementById('modalPayStatus').value = '';
+      document.getElementById('statusModal').style.display = 'block';
+      document.getElementById('statusModalBackdrop').style.display = 'block';
+    }
+
+    async function submitUpdateStatus() {
+      const bookingId = document.getElementById('statusModalBookingId').value;
+      const appointmentStatus = document.getElementById('modalApptStatus').value;
+      const paymentStatus = document.getElementById('modalPayStatus').value;
+      if (!appointmentStatus || !paymentStatus) return showToast('Please select both statuses', true);
+      
+      showToast('Updating...');
+      try {
+        const res = await fetch('/api/admin/bookings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          body: JSON.stringify({ action: 'update_status', bookingId, appointmentStatus, paymentStatus })
+        });
+        const data = await res.json();
+        if (data.success) { 
+          showToast('Updated successfully!'); 
+          document.getElementById('statusModal').style.display='none';
+          document.getElementById('statusModalBackdrop').style.display='none';
+          loadDashboard(); 
+        }
+        else showToast(data.error || 'Failed', true);
+      } catch (err) { showToast('Network Error', true); }
+    }
+
+    async function resendEmail(bookingId) {
+      if(!confirm('Resend confirmation email to patient?')) return;
+      showToast('Sending email...');
+      try {
+        const res = await fetch('/api/admin/resend-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          body: JSON.stringify({ bookingId })
+        });
+        const data = await res.json();
+        if (data.success) { showToast('Email sent successfully!'); }
+        else showToast(data.error || 'Failed to send', true);
+      } catch (err) { showToast('Network Error', true); }
+    }
+
+    async function loadSettings() {
+      try {
+        const res = await fetch('/api/admin/settings', { headers: getAuthHeaders() });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('set-start').value = escapeHtml(data.settings.working_hours_start || '');
+          document.getElementById('set-end').value = escapeHtml(data.settings.working_hours_end || '');
+          document.getElementById('set-days').value = escapeHtml(data.settings.working_days || 'mon,tue,wed,thu,fri,sat');
+          document.getElementById('set-lead').value = escapeHtml(data.settings.lead_time_hours || '');
+          
+          const tbody = document.getElementById('servicesTable');
+          tbody.innerHTML = (data.services || []).map(s => '<tr><td>'+escapeHtml(s.service_name)+'</td><td>₹'+escapeHtml(s.price)+'</td><td><button class="action-btn" onclick="updatePrice(\''+escapeHtml(s.service_id)+'\')">Update Price</button></td></tr>').join('');
+        }
+      } catch(e) { showToast('Failed to load settings', true); }
+    }
+
+    async function saveSettings() {
+      const start_time = document.getElementById('set-start').value;
+      const end_time = document.getElementById('set-end').value;
+      const working_days = document.getElementById('set-days').value;
+      const lead_time_hours = document.getElementById('set-lead').value;
+      showToast('Saving...');
+      try {
+        const res = await fetch('/api/admin/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          body: JSON.stringify({ action: 'update_settings', start_time, end_time, working_days, lead_time_hours })
+        });
+        const data = await res.json();
+        if(data.success) showToast('Saved!'); else showToast('Error saving', true);
+      } catch(e) { showToast('Network error', true); }
+    }
+
+    async function updatePrice(serviceId) {
+      const newPrice = prompt('Enter new price (INR):');
+      if (!newPrice) return;
+      showToast('Updating...');
+      try {
+        const res = await fetch('/api/admin/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          body: JSON.stringify({ action: 'update_price', serviceId, newPrice })
+        });
+        const data = await res.json();
+        if(data.success) { showToast('Price updated'); loadSettings(); }
+        else showToast('Failed to update', true);
+      } catch(e) { showToast('Network error', true); }
     }
 
     function renderPayments(payments) {
@@ -302,12 +537,11 @@
     }
 
     async function retrySync(bookingId) {
-      const secret = secretInput.value.trim();
       showToast(`Retrying Calendar sync for ${bookingId}...`);
       try {
         const res = await fetch('/api/admin/bookings', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify({ action: 'retry_calendar_sync', bookingId })
         });
         const data = await res.json();
@@ -316,27 +550,10 @@
       } catch (err) { showToast('Error executing retry sync', true); }
     }
 
-    async function manualConfirm(bookingId) {
-      const secret = secretInput.value.trim();
-      showToast(`Confirming booking ${bookingId}...`);
-      try {
-        const res = await fetch('/api/admin/bookings', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
-          body: JSON.stringify({ action: 'update_status', bookingId, appointmentStatus: 'CONFIRMED', paymentStatus: 'PAID' })
-        });
-        const data = await res.json();
-        if (data.success) { showToast(`Booking ${bookingId} confirmed.`); loadDashboard(); }
-        else showToast(data.error || 'Update failed', true);
-      } catch (err) { showToast('Error confirming booking', true); }
-    }
-
     function escapeHtml(str) {
       if (!str) return '';
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
-
-    window.addEventListener('DOMContentLoaded', loadDashboard);
   </script>
 </body>
 </html>

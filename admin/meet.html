@@ -28,8 +28,8 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       document.body.style.visibility = 'visible';
-      const savedEmail = localStorage.getItem('reva_admin_email');
-      const savedPass = localStorage.getItem('reva_admin_secret');
+      const savedEmail = sessionStorage.getItem('reva_admin_email');
+      const savedPass = sessionStorage.getItem('reva_admin_secret');
       if (savedEmail && savedPass) {
         document.getElementById('admin-email').value = savedEmail;
         document.getElementById('admin-pass').value = savedPass;
@@ -57,8 +57,8 @@
         });
 
         if (res.ok || res.status === 200) {
-          localStorage.setItem('reva_admin_email', email);
-          localStorage.setItem('reva_admin_secret', pass);
+          sessionStorage.setItem('reva_admin_email', email);
+          sessionStorage.setItem('reva_admin_secret', pass);
           document.getElementById('login-overlay').style.display = 'none';
           document.body.style.overflow = 'auto';
         } else {
@@ -67,8 +67,8 @@
       } catch (err) {
         if (!silent) {
           document.getElementById('login-error').style.display = 'block';
-          localStorage.removeItem('reva_admin_email');
-          localStorage.removeItem('reva_admin_secret');
+          sessionStorage.removeItem('reva_admin_email');
+          sessionStorage.removeItem('reva_admin_secret');
         }
       } finally {
         btn.innerText = oldText;
@@ -99,8 +99,8 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-admin-email': localStorage.getItem('reva_admin_email'),
-            'x-admin-secret': localStorage.getItem('reva_admin_secret')
+            'x-admin-email': sessionStorage.getItem('reva_admin_email'),
+            'x-admin-secret': sessionStorage.getItem('reva_admin_secret')
           },
           body: JSON.stringify({
             bookingId: new URLSearchParams(window.location.search).get('id'),
