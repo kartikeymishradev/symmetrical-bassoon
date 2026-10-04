@@ -42,6 +42,13 @@ module.exports = async (req, res) => {
       to: row.email, patientName: row.patient_name || 'Patient', bookingId: body.bookingId,
       packageName: row.service_name || 'Consultation', date: row.appointment_date, time: row.appointment_time, meetingLink: body.meetingLink
     });
-    return emailRes.success ? res.status(200).json({ success: true }) : res.status(500).json({ error: 'Failed to send meeting link email' });
+    
+    if (emailRes.success) {
+      const { updateBookingNotes } = require('../../lib/sheets');
+      await updateBookingNotes(body.bookingId, 'GMeet Link Sent');
+      return res.status(200).json({ success: true });
+    } else {
+      return res.status(500).json({ error: 'Failed to send meeting link email' });
+    }
   } catch(e) { return res.status(500).json({ error: 'Internal server error' }); }
 };

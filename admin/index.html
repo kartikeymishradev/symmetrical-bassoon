@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>REVA Health — Admin Dashboard</title>
+  <title>REVA Health â€” Admin Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -166,7 +166,7 @@
       </div>
       <div class="form-group">
         <label for="gateSecret">Access Secret</label>
-        <input type="password" id="gateSecret" class="form-input" placeholder="••••••••••••">
+        <input type="password" id="gateSecret" class="form-input" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢">
       </div>
       <button class="btn-primary" id="gateBtn" onclick="attemptLogin()">
         Unlock Dashboard
@@ -541,7 +541,7 @@
         const alertBody = document.getElementById('alertsTable');
         if (alertBody) {
           if (alerts.length === 0) alertBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);">No alerts</td></tr>';
-          else alertBody.innerHTML = alerts.map(b => '<tr><td>'+escapeHtml(b.booking_id)+'</td><td>'+escapeHtml(b.patient_name)+'</td><td>'+escapeHtml(b.phone_number)+'</td><td>₹'+escapeHtml(b.amount)+'</td><td style="color:#be123c;">'+escapeHtml(b.appointment_status)+'</td></tr>').join('');
+          else alertBody.innerHTML = alerts.map(b => '<tr><td>'+escapeHtml(b.booking_id)+'</td><td>'+escapeHtml(b.patient_name)+'</td><td>'+escapeHtml(b.phone_number)+'</td><td>â‚¹'+escapeHtml(b.amount)+'</td><td style="color:#be123c;">'+escapeHtml(b.appointment_status)+'</td></tr>').join('');
         }
         
         if (document.getElementById('tab-settings').classList.contains('active')) loadSettings();
@@ -562,7 +562,7 @@
       document.getElementById('statPayments').textContent = payments.length;
       document.getElementById('statPendingSync').textContent = bookings.filter(b => b.appointment_status === 'CONFIRMATION_PENDING').length;
       const rev = payments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
-      document.getElementById('statRevenue').textContent = `₹${rev.toLocaleString()}`;
+      document.getElementById('statRevenue').textContent = `â‚¹${rev.toLocaleString()}`;
     }
 
     function drawChart(id, emptyId, hasData, config) {
@@ -588,7 +588,7 @@
       grad.addColorStop(0, 'rgba(13,148,136,.45)'); grad.addColorStop(1, 'rgba(2,132,199,.02)');
       drawChart('revenueChart', 'emptyRevenue', days.length > 0, {
         type: 'line',
-        data: { labels: days, datasets: [{ label: 'Revenue (₹)', data: days.map(d => byDay[d]), borderColor: '#0d9488', backgroundColor: grad, fill: true, tension: .35, pointBackgroundColor: '#fff', pointBorderColor: '#0d9488', pointBorderWidth: 2, pointRadius: 4 }] },
+        data: { labels: days, datasets: [{ label: 'Revenue (â‚¹)', data: days.map(d => byDay[d]), borderColor: '#0d9488', backgroundColor: grad, fill: true, tension: .35, pointBackgroundColor: '#fff', pointBorderColor: '#0d9488', pointBorderWidth: 2, pointRadius: 4 }] },
         options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#eef2f7' } }, x: { grid: { display: false } } } }
       });
 
@@ -609,7 +609,7 @@
       const svc = Object.entries(bySvc).sort((a, b) => b[1] - a[1]).slice(0, 6);
       drawChart('serviceChart', 'emptyService', svc.length > 0, {
         type: 'bar',
-        data: { labels: svc.map(s => s[0]), datasets: [{ label: 'Revenue (₹)', data: svc.map(s => s[1]), backgroundColor: svc.map((_, i) => PALETTE[i % PALETTE.length]), borderRadius: 8 }] },
+        data: { labels: svc.map(s => s[0]), datasets: [{ label: 'Revenue (â‚¹)', data: svc.map(s => s[1]), backgroundColor: svc.map((_, i) => PALETTE[i % PALETTE.length]), borderRadius: 8 }] },
         options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: '#eef2f7' } }, y: { grid: { display: false } } } }
       });
     }
@@ -626,14 +626,14 @@
         let apptClass = 'badge-pending';
         if (b.appointment_status === 'CONFIRMED') apptClass = 'badge-confirmed';
         if (b.appointment_status === 'CANCELLED' || b.appointment_status === 'SLOT_CONFLICT_CANCELLED') apptClass = 'badge-failed';
-        const payClass = isPaid ? 'badge-paid' : 'badge-pending';
+        const payClass = isPaid ? 'badge-paid' : 'badge-pending'; const linkSent = (b.notes || '').includes('GMeet Link Sent'); const linkBtnText = linkSent ? 'GMeet Sent \u2705' : 'Send GMeet Link';
         return `
           <tr>
             <td><strong>${escapeHtml(b.booking_id)}</strong></td>
             <td>${escapeHtml(b.patient_name || '-')}</td>
             <td><a href="https://wa.me/" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;"></a></td>
             <td>${escapeHtml(b.service_name || '-')}</td>
-            <td><strong>₹${escapeHtml(b.amount || '-')}</strong></td>
+            <td><strong>â‚¹${escapeHtml(b.amount || '-')}</strong></td>
             <td>${escapeHtml(b.appointment_date)} ${escapeHtml(b.appointment_time)}</td>
             <td><span class="badge ${payClass}">${escapeHtml(b.payment_status || 'PENDING')}</span></td>
             <td><span class="badge ${apptClass}">${escapeHtml(b.appointment_status || 'REQUESTED')}</span></td>
@@ -641,7 +641,7 @@
             <td>
               ${isPendingSync ? `<button class="action-btn btn-warning" onclick="retrySync('${escapeHtml(b.booking_id)}')">Retry sync</button>` : ''}
               <button class="action-btn" onclick="openUpdateModal('${escapeHtml(b.booking_id)}')">Update Status</button>
-              <button class="action-btn btn-secondary" onclick="sendCustomMeetLink('${escapeHtml(b.booking_id)}')">Send GMeet Link</button>
+              <button class="action-btn btn-secondary" onclick="sendCustomMeetLink('${escapeHtml(b.booking_id)}')">${linkBtnText}</button>
               <button class="action-btn btn-secondary" onclick="resendEmail('${escapeHtml(b.booking_id)}')">Resend Email</button>
             </td>
           </tr>`;
@@ -680,7 +680,7 @@
       } catch (err) { showToast('Network Error', true); }
     }
 
-    async function sendCustomMeetLink(bookingId) { const link = prompt('Paste the Google Meet / Zoom link to send to the patient:'); if (!link) return; showToast('Sending Meeting Link...'); try { const res = await fetch('/api/admin/send-link', { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, body: JSON.stringify({ bookingId, meetingLink: link }) }); const data = await res.json(); if (data.success) showToast('Meeting link sent to patient!'); else showToast(data.error || 'Failed to send link', true); } catch (err) { showToast('Error sending link', true); } } async function resendEmail(bookingId) {
+    async function sendCustomMeetLink(bookingId) { const link = prompt('Paste the Google Meet / Zoom link to send to the patient:'); if (!link) return; showToast('Sending Meeting Link...'); try { const res = await fetch('/api/admin/send-link', { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, body: JSON.stringify({ bookingId, meetingLink: link }) }); const data = await res.json(); if (data.success) showToast('Meeting link sent to patient!'); loadDashboard(); else showToast(data.error || 'Failed to send link', true); } catch (err) { showToast('Error sending link', true); } } async function resendEmail(bookingId) {
       if(!confirm('Resend confirmation email to patient?')) return;
       showToast('Sending email...');
       try {
@@ -706,7 +706,7 @@
           document.getElementById('set-lead').value = escapeHtml(data.settings.lead_time_hours || '');
           
           const tbody = document.getElementById('servicesTable');
-          tbody.innerHTML = (data.services || []).map(s => '<tr><td>'+escapeHtml(s.service_name)+'</td><td>₹'+escapeHtml(s.price)+'</td><td><button class="action-btn" onclick="updatePrice(\''+escapeHtml(s.service_id)+'\')">Update Price</button></td></tr>').join('');
+          tbody.innerHTML = (data.services || []).map(s => '<tr><td>'+escapeHtml(s.service_name)+'</td><td>â‚¹'+escapeHtml(s.price)+'</td><td><button class="action-btn" onclick="updatePrice(\''+escapeHtml(s.service_id)+'\')">Update Price</button></td></tr>').join('');
         }
       } catch(e) { showToast('Failed to load settings', true); }
     }
@@ -755,7 +755,7 @@
           <td><strong>${escapeHtml(p.payment_id)}</strong></td>
           <td>${escapeHtml(p.booking_id)}</td>
           <td><code>${escapeHtml(p.razorpay_payment_id || '-')}</code></td>
-          <td><strong>₹${escapeHtml(p.amount)}</strong></td>
+          <td><strong>â‚¹${escapeHtml(p.amount)}</strong></td>
           <td>${escapeHtml(p.currency)}</td>
           <td><span class="badge badge-paid">${escapeHtml(p.status)}</span></td>
           <td>${escapeHtml(p.method || 'online')}</td>

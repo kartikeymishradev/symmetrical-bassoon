@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -517,7 +517,7 @@
           <div class="reva-package-card">
             <div class="package-num">01</div>
             <h3 class="package-title">DOCTOR CONSULTATION</h3>
-            <div class="package-price">₹400</div>
+            <div class="package-price" data-service="Doctor Consultation">&#8377;400</div>
             <ul class="package-features-list">
               <li><span class="list-bullet">+</span> Direct consultation with Dr. Rishabh Jain (MD Medicine)</li>
               <li><span class="list-bullet">+</span> Clinical diagnosis & blood report review</li>
@@ -530,7 +530,7 @@
           <div class="reva-package-card">
             <div class="package-num">02</div>
             <h3 class="package-title">NUTRITION CONSULTATION</h3>
-            <div class="package-price">₹299</div>
+            <div class="package-price" data-service="Nutrition Consultation">&#8377;299</div>
             <ul class="package-features-list">
               <li><span class="list-bullet">+</span> 1-on-1 dietary assessment with nutrition lead</li>
               <li><span class="list-bullet">+</span> Calorie & macronutrient distribution guidance</li>
@@ -543,7 +543,7 @@
           <div class="reva-package-card">
             <div class="package-num">03</div>
             <h3 class="package-title">PERSONALISED DIET PLAN</h3>
-            <div class="package-price">₹499</div>
+            <div class="package-price" data-service="Personalised Diet Plan">&#8377;499</div>
             <ul class="package-features-list">
               <li><span class="list-bullet">+</span> Customised Indian meal chart (veg / non-veg)</li>
               <li><span class="list-bullet">+</span> Tailored to PCOS, Diabetes, Thyroid or Weight goals</li>
@@ -556,7 +556,7 @@
           <div class="reva-package-card">
             <div class="package-num">04</div>
             <h3 class="package-title">DIET + WORKOUT PLAN</h3>
-            <div class="package-price">₹699</div>
+            <div class="package-price" data-service="Diet + Workout Plan">&#8377;699</div>
             <ul class="package-features-list">
               <li><span class="list-bullet">+</span> Personalised meal plan + customized exercise chart</li>
               <li><span class="list-bullet">+</span> Home & gym workout routine options</li>
@@ -570,7 +570,7 @@
             <div class="bestseller-badge">BEST SELLER</div>
             <div class="package-num text-accent">05</div>
             <h3 class="package-title">DOCTOR + NUTRITION COMBO</h3>
-            <div class="package-price price-accent">₹999</div>
+            <div class="package-price price-accent" data-service="Doctor + Nutrition Combo Package">&#8377;999</div>
             <ul class="package-features-list">
               <li><span class="list-bullet text-accent">+</span> Full MD Doctor Consultation + Diet & Workout Plan</li>
               <li><span class="list-bullet text-accent">+</span> Comprehensive medical oversight & clinical blood review</li>
@@ -888,3 +888,4 @@
   <script src="js/main.js"></script>
 </body>
 </html>
+<script>async function loadDynamicPrices() { try { const res = await fetch('/api/services'); const data = await res.json(); if (data.success && data.services) { data.services.forEach(srv => { const el = document.querySelector(.package-price[data-service="${srv.service_name}"]); if (el) el.innerHTML = "&#8377;"; }); } } catch (err) {} } window.addEventListener('DOMContentLoaded', loadDynamicPrices);</script>
