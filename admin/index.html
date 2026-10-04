@@ -641,7 +641,8 @@
             <td>
               ${isPendingSync ? `<button class="action-btn btn-warning" onclick="retrySync('${escapeHtml(b.booking_id)}')">Retry sync</button>` : ''}
               <button class="action-btn" onclick="openUpdateModal('${escapeHtml(b.booking_id)}')">Update Status</button>
-              <button class="action-btn btn-secondary" onclick="resendEmail('${escapeHtml(b.booking_id)}')">Resend Email</button>
+              <button class="action-btn btn-secondary" onclick="sendCustomMeetLink('')">Send GMeet Link</button>
+              <button class="action-btn btn-secondary" onclick="resendEmail('')">Resend Email</button>
             </td>
           </tr>`;
       }).join('');
@@ -679,7 +680,7 @@
       } catch (err) { showToast('Network Error', true); }
     }
 
-    async function resendEmail(bookingId) {
+    async function sendCustomMeetLink(bookingId) { const link = prompt('Paste the Google Meet / Zoom link to send to the patient:'); if (!link) return; showToast('Sending Meeting Link...'); try { const res = await fetch('/api/admin/send-link', { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, body: JSON.stringify({ bookingId, meetingLink: link }) }); const data = await res.json(); if (data.success) showToast('Meeting link sent to patient!'); else showToast(data.error || 'Failed to send link', true); } catch (err) { showToast('Error sending link', true); } } async function resendEmail(bookingId) {
       if(!confirm('Resend confirmation email to patient?')) return;
       showToast('Sending email...');
       try {
