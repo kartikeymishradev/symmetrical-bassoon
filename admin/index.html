@@ -724,7 +724,7 @@
           body: JSON.stringify({ action: 'update_settings', start_time, end_time, working_days, lead_time_hours })
         });
         const data = await res.json();
-        if(data.success) showToast('Saved!'); else showToast('Error saving', true);
+        if(data.success) showToast('Saved!'); else showToast(data.error || 'Error saving', true);
       } catch(e) { showToast('Network error', true); }
     }
 
