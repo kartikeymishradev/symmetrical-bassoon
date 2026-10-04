@@ -2,6 +2,7 @@ const { getAllBookings } = require('../../lib/sheets');
 const { sendBookingConfirmationEmail } = require('../../lib/email');
 const { setCorsHeaders } = require('../../lib/cors');
 const { checkRateLimit } = require('../../lib/ratelimit');
+const { getEventMeetingLink } = require('../../lib/calendar');
 const crypto = require('crypto');
 
 function verifyAdminAuth(req) {
@@ -35,9 +36,15 @@ module.exports = async (req, res) => {
     const row = bookings.find(b => b.booking_id === body.bookingId);
     if (!row) return res.status(404).json({ error: 'Booking not found' });
     if (!row.email) return res.status(400).json({ error: 'Patient does not have an email' });
+    
+    let meetingLink = '';
+    if (row.calendar_event_id) {
+      meetingLink = await getEventMeetingLink(row.calendar_event_id);
+    }
+
     const emailRes = await sendBookingConfirmationEmail({
       to: row.email, patientName: row.patient_name || 'Patient', bookingId: body.bookingId,
-      packageName: row.service_name || 'Consultation', date: row.appointment_date, time: row.appointment_time, meetingLink: '' 
+      packageName: row.service_name || 'Consultation', date: row.appointment_date, time: row.appointment_time, meetingLink: meetingLink
     });
     return emailRes.success ? res.status(200).json({ success: true }) : res.status(500).json({ error: 'Failed to resend email' });
   } catch(e) { return res.status(500).json({ error: 'Internal server error' }); }
