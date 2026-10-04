@@ -47,16 +47,16 @@ module.exports = async (req, res) => {
       }
       if (action === 'update_settings') {
         const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-        if (!timeRegex.test(start_time) || !timeRegex.test(end_time)) return res.status(400).json({ error: 'Invalid time' });
+        if (!timeRegex.test(start_time) || !timeRegex.test(end_time)) return res.status(400).json({ error: 'Invalid time format. Please use 24-hour HH:MM format (e.g., 09:00, 18:00)' });
         const [startH, startM] = start_time.split(':').map(Number);
         const [endH, endM] = end_time.split(':').map(Number);
-        if ((startH * 60 + startM) >= (endH * 60 + endM)) return res.status(400).json({ error: 'Start >= end' });
-        const validDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-        const daysArr = String(working_days).split(',').map(d => d.trim().toLowerCase());
+        if ((startH * 60 + startM) >= (endH * 60 + endM)) return res.status(400).json({ error: 'Start time must be before end time.' });
+        const validDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        const daysArr = String(working_days || '').split(',').map(d => d.trim().toLowerCase()).filter(Boolean);
         const invalidDays = daysArr.filter(d => !validDays.includes(d));
-        if (invalidDays.length > 0 || daysArr.length === 0) return res.status(400).json({ error: 'Invalid days' });
+        if (invalidDays.length > 0 || daysArr.length === 0) return res.status(400).json({ error: `Invalid days provided. Use comma-separated short names (mon,tue). Found invalid: ${invalidDays.join(',')}` });
         const leadHrs = parseFloat(lead_time_hours);
-        if (isNaN(leadHrs) || leadHrs < 0 || leadHrs > 72) return res.status(400).json({ error: 'Invalid lead' });
+        if (isNaN(leadHrs) || leadHrs < 0 || leadHrs > 72) return res.status(400).json({ error: 'Invalid lead time. Must be a number between 0 and 72 hours.' });
         const updateRes = await saveSettingsToSheets({ start_time, end_time, working_days, lead_time_hours });
         return updateRes.success ? res.status(200).json({ success: true }) : res.status(500).json({ error: updateRes.error || 'Failed' });
       }
