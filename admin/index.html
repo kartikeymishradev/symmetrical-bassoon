@@ -118,7 +118,8 @@
     .btn-warning { color: var(--gold-accent); border-color: var(--gold-accent); }
     .btn-secondary { color: var(--text-muted); }
 
-    .modal-overlay { position: fixed; inset: 0; background-color: rgba(23, 33, 43, 0.45); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px; }
+    .modal-overlay { position: fixed; inset: 0; background-color: rgba(23, 33, 43, 0.45); z-index: 9999; }
+    #statusModal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10000; width: 90%; max-width: 440px; background: transparent; inset: auto; }
     .modal-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); max-width: 440px; width: 100%; padding: 28px; box-shadow: var(--shadow-md); position: relative; }
     .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
     .modal-header h2 { font-family: var(--font-serif); font-size: 20px; font-weight: 400; color: var(--text); }
