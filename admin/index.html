@@ -88,8 +88,8 @@
     .tab-btn.active::after { content: ""; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background-color: var(--accent); }
     .tab-pill-count { font-size: 11px; padding: 2px 7px; border-radius: 10px; background: var(--surface-alt); color: var(--text-muted); font-weight: 600; }
     .tab-btn.active .tab-pill-count { background: var(--accent-light); color: var(--accent); }
-    .tab-pane { display: none; }
-    .tab-pane.active { display: block; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
 
     .table-container-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
     .table-toolbar { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-light); gap: 16px; flex-wrap: wrap; }
@@ -268,7 +268,7 @@
       </nav>
 
       <!-- TAB: BOOKINGS -->
-      <div id="tab-bookings" class="tab-pane active">
+      <div id="tab-bookings" class="tab-content active">
         <div class="table-container-card">
           <div class="table-toolbar">
             <span class="table-toolbar-title">Active Patient Bookings</span>
@@ -296,7 +296,7 @@
       </div>
 
       <!-- TAB: PAYMENTS -->
-      <div id="tab-payments" class="tab-pane">
+      <div id="tab-payments" class="tab-content">
         <div class="table-container-card">
           <div class="table-toolbar">
             <span class="table-toolbar-title">Settlement Transactions</span>
@@ -322,7 +322,7 @@
       </div>
 
       <!-- TAB: ALERTS -->
-      <div id="tab-alerts" class="tab-pane">
+      <div id="tab-alerts" class="tab-content">
         <div class="table-container-card">
           <div class="table-toolbar">
             <span class="table-toolbar-title">Action Required: Potential Refunds</span>
@@ -345,7 +345,7 @@
       </div>
 
       <!-- TAB: SETTINGS -->
-      <div id="tab-settings" class="tab-pane">
+      <div id="tab-settings" class="tab-content">
         <div class="settings-grid">
           <div class="settings-card">
             <div class="settings-card-header">
