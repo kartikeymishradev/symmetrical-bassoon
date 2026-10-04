@@ -43,7 +43,7 @@ module.exports = async (req, res) => {
         const price = parseFloat(newPrice);
         if (!serviceId || isNaN(price) || price < 0 || price > 100000) return res.status(400).json({ error: 'Invalid price' });
         const updateRes = await updateServicePrice(serviceId, price);
-        return updateRes.success ? res.status(200).json({ success: true }) : res.status(500).json({ error: 'Failed' });
+        return updateRes.success ? res.status(200).json({ success: true }) : res.status(500).json({ error: updateRes.error || 'Failed' });
       }
       if (action === 'update_settings') {
         const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -58,7 +58,7 @@ module.exports = async (req, res) => {
         const leadHrs = parseFloat(lead_time_hours);
         if (isNaN(leadHrs) || leadHrs < 0 || leadHrs > 72) return res.status(400).json({ error: 'Invalid lead' });
         const updateRes = await saveSettingsToSheets({ start_time, end_time, working_days, lead_time_hours });
-        return updateRes.success ? res.status(200).json({ success: true }) : res.status(500).json({ error: 'Failed' });
+        return updateRes.success ? res.status(200).json({ success: true }) : res.status(500).json({ error: updateRes.error || 'Failed' });
       }
       return res.status(400).json({ error: 'Invalid action.' });
     }
