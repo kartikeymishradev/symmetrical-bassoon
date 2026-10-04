@@ -10,6 +10,7 @@
 
 const { getAllBookings, getAllPayments, updateBookingCalendarDetails, updateBookingPaymentStatus, updateBookingTelegramStatus } = require('../../lib/sheets');
 const { createAppointmentEvent } = require('../../lib/calendar');
+const { sendStatusEmail } = require('../../lib/email');
 const { setCorsHeaders } = require('../../lib/cors');
 const { checkRateLimit } = require('../../lib/ratelimit');
 const https = require('https');
@@ -197,11 +198,47 @@ module.exports = async function handler(req, res) {
           return res.status(500).json({ error: updateRes.error || 'Failed to update status in Google Sheets.' });
         }
 
+                // Determine status email type based on combination
+        let emailType = null;
+        const appt = targetApptStatus.toUpperCase();
+        const pay = targetPayStatus.toUpperCase();
+
+        if (appt === 'CONFIRMED' && pay === 'PAID') emailType = 'confirmed_paid';
+        else if (appt === 'CONFIRMED' && pay === 'PENDING') emailType = 'confirmed_pending';
+        else if (appt === 'CANCELLED' && pay === 'REFUNDED') emailType = 'cancelled_refunded';
+        else if (appt === 'CANCELLED' && pay === 'PAID') emailType = 'cancelled_refund_pending';
+        else if (appt === 'CANCELLED' && (pay === 'PENDING' || pay === 'FAILED')) emailType = 'cancelled_no_charge';
+        else if (appt === 'PAID_SLOT_CONFLICT' && pay === 'PAID') emailType = 'slot_conflict';
+        else if (appt === 'SLOT_EXPIRED') emailType = 'slot_expired';
+        // REQUESTED + any or unknown combos => no email
+
+        let emailSent = false;
+        if (emailType) {
+          try {
+            const { bookings } = await getAllBookings();
+            const row = bookings.find(b => b.booking_id === bookingId);
+            if (row && row.email) {
+              const emailRes = await sendStatusEmail({
+                type: emailType,
+                to: row.email,
+                patientName: row.patient_name || 'Patient',
+                bookingId: bookingId,
+                date: row.appointment_date || '',
+                time: row.appointment_time || ''
+              });
+              emailSent = emailRes.success;
+            }
+          } catch (emailErr) {
+            console.error('[EMAIL] Status email failed (non-blocking):', emailErr.message);
+          }
+        }
+
         return res.status(200).json({
           success: true,
           bookingId: bookingId,
           appointmentStatus: targetApptStatus,
           paymentStatus: targetPayStatus,
+          email_sent: emailSent,
           message: 'Status updated successfully.'
         });
       }
