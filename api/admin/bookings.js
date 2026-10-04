@@ -17,22 +17,18 @@ const crypto = require('crypto');
 
 function verifyAdminAuth(req) {
   const secretKey = process.env.ADMIN_SECRET_KEY;
-  if (!secretKey) {
-    return { valid: false, error: 'ADMIN_SECRET_KEY_NOT_SET' };
-  }
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!secretKey) return { valid: false, error: 'ADMIN_SECRET_KEY_NOT_SET' };
   const providedSecret = req.headers['x-admin-secret'];
-  if (!providedSecret || typeof providedSecret !== 'string') {
-    return { valid: false, error: 'UNAUTHORIZED' };
-  }
+  if (!providedSecret || typeof providedSecret !== 'string') return { valid: false, error: 'UNAUTHORIZED' };
   const expectedBuf = Buffer.from(secretKey, 'utf8');
   const actualBuf = Buffer.from(providedSecret, 'utf8');
-  if (expectedBuf.length !== actualBuf.length) {
-    return { valid: false, error: 'UNAUTHORIZED' };
+  if (expectedBuf.length !== actualBuf.length || !crypto.timingSafeEqual(expectedBuf, actualBuf)) return { valid: false, error: 'UNAUTHORIZED' };
+  if (adminEmail) {
+    const providedEmail = req.headers['x-admin-email'];
+    if (!providedEmail || providedEmail.toLowerCase().trim() !== adminEmail.toLowerCase().trim()) return { valid: false, error: 'UNAUTHORIZED' };
   }
-  if (crypto.timingSafeEqual(expectedBuf, actualBuf)) {
-    return { valid: true };
-  }
-  return { valid: false, error: 'UNAUTHORIZED' };
+  return { valid: true };
 }
 
 module.exports = async function handler(req, res) {
