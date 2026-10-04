@@ -5,279 +5,431 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>REVA Health — Admin Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
-      --teal: #0d9488; --sky: #0284c7; --violet: #7c3aed; --amber: #f59e0b; --coral: #f43f5e; --green: #16a34a;
-      --bg: #f1f5f9; --card: #ffffff; --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
+      --bg: #F7F6F2;
+      --surface: #FFFFFF;
+      --surface-alt: #F0F2EF;
+      --surface-contrast: #17212B;
+      --text: #17212B;
+      --text-muted: #667085;
+      --border: #D8DDD8;
+      --border-light: #E7EBE7;
+      --accent: #0B6B62;
+      --accent-hover: #08524B;
+      --accent-light: #EBF4F3;
+      --gold-accent: #B8860B;
+      --gold-bg: #FDF8EC;
+      --info: #0284c7;
+      --info-bg: #f0f9ff;
+      --danger: #dc2626;
+      --danger-bg: #fef2f2;
+      
+      --font-serif: 'DM Serif Display', Georgia, serif;
+      --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --radius: 4px;
+      --radius-lg: 6px;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Plus Jakarta Sans", -apple-system, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); line-height: 1.5; }
 
-    .hero { background: linear-gradient(120deg, #0f766e 0%, #0284c7 55%, #7c3aed 100%); color: #fff; padding: 22px 28px 90px; }
-    .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; max-width: 1400px; margin: 0 auto; }
-    .brand h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
-    .brand p { font-size: 0.85rem; opacity: .8; }
-    .auth-box { display: flex; gap: 10px; align-items: center; background: rgba(255,255,255,.15); padding: 8px; border-radius: 12px; backdrop-filter: blur(6px); }
-    input[type="password"], input[type="email"] { padding: 9px 12px; border: none; border-radius: 8px; font-size: .9rem; width: 220px; background: rgba(255,255,255,.95); color: var(--text); }
-    button { border: none; cursor: pointer; font-weight: 600; border-radius: 8px; font-size: .88rem; transition: transform .15s, filter .15s; color: #fff; }
-    button:hover { filter: brightness(1.08); }
-    button:active { transform: scale(.97); }
-    button:focus-visible, input:focus-visible { outline: 3px solid #fde68a; outline-offset: 2px; }
-    .btn-refresh { background: #fff; color: var(--sky); padding: 9px 18px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    body { background-color: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 13px; line-height: 1.5; min-height: 100vh; }
 
-    .wrap { max-width: 1400px; margin: -64px auto 40px; padding: 0 20px; }
+    #login-gate { position: fixed; inset: 0; background-color: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+    .login-card { width: 100%; max-width: 380px; background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: var(--radius-lg); padding: 40px; box-shadow: var(--shadow-md); }
+    .login-header { margin-bottom: 28px; text-align: left; }
+    .login-header h1 { font-family: var(--font-serif); font-size: 26px; color: var(--text); font-weight: 400; letter-spacing: -0.01em; line-height: 1.2; margin-bottom: 6px; }
+    .login-header p { color: var(--text-muted); font-size: 13px; font-weight: 500; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text); margin-bottom: 6px; }
+    .form-input { width: 100%; height: 40px; padding: 0 12px; font-family: var(--font-sans); font-size: 13px; color: var(--text); background-color: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+    .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(11, 107, 98, 0.15); }
+    .btn-primary { width: 100%; height: 42px; background-color: var(--accent); color: #FFFFFF; font-family: var(--font-sans); font-size: 13px; font-weight: 600; border: none; border-radius: var(--radius); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: background-color 0.15s ease; }
+    .btn-primary:hover { background-color: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+    .login-footnote { margin-top: 20px; text-align: center; font-size: 11px; color: var(--text-muted); }
 
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
-    .stat-card { background: var(--card); border-radius: 16px; padding: 18px 20px; display: flex; gap: 14px; align-items: center; box-shadow: 0 6px 20px rgba(15,23,42,.08); }
-    .stat-icon { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; font-size: 1.4rem; flex-shrink: 0; }
-    .stat-card .label { font-size: .8rem; color: var(--muted); font-weight: 500; }
-    .stat-card .value { font-size: 1.65rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
-    .s-blue .stat-icon { background: #e0f2fe; } .s-blue .value { color: var(--sky); }
-    .s-violet .stat-icon { background: #ede9fe; } .s-violet .value { color: var(--violet); }
-    .s-amber .stat-icon { background: #fef3c7; } .s-amber .value { color: #d97706; }
-    .s-green .stat-icon { background: #dcfce7; } .s-green .value { color: var(--green); }
+    .admin-header { background-color: var(--surface-contrast); color: #FFFFFF; height: 64px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; position: sticky; top: 0; z-index: 100; }
+    .brand-group { display: flex; align-items: center; gap: 12px; }
+    .brand-logo-text { font-family: var(--font-serif); font-size: 22px; color: #FFFFFF; font-weight: 400; letter-spacing: -0.01em; text-decoration: none; }
+    .badge-admin { background-color: var(--accent-light); color: var(--accent); font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 8px; border-radius: var(--radius); }
+    .header-actions { display: flex; align-items: center; gap: 16px; }
+    .header-meta { font-size: 12px; color: rgba(255, 255, 255, 0.65); }
+    .btn-ghost-white { background: transparent; border: 1px solid rgba(255, 255, 255, 0.35); color: #FFFFFF; font-family: var(--font-sans); font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: var(--radius); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; }
+    .btn-ghost-white:hover { background: rgba(255, 255, 255, 0.1); border-color: #FFFFFF; }
 
-    .charts-grid { display: grid; grid-template-columns: 1.6fr 1fr 1.2fr; gap: 16px; margin-bottom: 26px; }
-    @media (max-width: 1050px) { .charts-grid { grid-template-columns: 1fr; } }
-    .chart-card { background: var(--card); border-radius: 16px; padding: 18px 20px; box-shadow: 0 6px 20px rgba(15,23,42,.06); border-top: 4px solid var(--sky); }
-    .chart-card:nth-child(2) { border-top-color: var(--violet); }
-    .chart-card:nth-child(3) { border-top-color: var(--teal); }
-    .chart-card h3 { font-size: .95rem; font-weight: 700; margin-bottom: 12px; }
-    .chart-box { position: relative; height: 240px; }
-    .empty-chart { position: absolute; inset: 0; display: none; place-items: center; color: var(--muted); font-size: .85rem; text-align: center; }
+    .dashboard-container { max-width: 1360px; margin: 0 auto; padding: 28px 32px 64px; }
 
-    .section-title { font-size: 1.05rem; font-weight: 700; margin: 6px 0 12px; display: flex; align-items: center; gap: 10px; }
-    .section-title::before { content: ""; width: 5px; height: 20px; border-radius: 4px; background: linear-gradient(var(--teal), var(--violet)); }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+    .stat-card.card-bookings { border-left: 4px solid var(--accent); }
+    .stat-card.card-revenue { border-left: 4px solid var(--gold-accent); }
+    .stat-card.card-payments { border-left: 4px solid var(--info); }
+    .stat-card.card-sync { border-left: 4px solid var(--gold-accent); }
+    .stat-card-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 8px; }
+    .stat-card-value { font-family: var(--font-serif); font-size: 30px; line-height: 1.1; color: var(--text); margin-bottom: 4px; }
+    .stat-card-subtext { font-size: 11px; color: var(--text-muted); }
 
-    .table-container { background: var(--card); border-radius: 16px; overflow-x: auto; margin-bottom: 30px; box-shadow: 0 6px 20px rgba(15,23,42,.06); }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: .85rem; }
-    th, td { padding: 13px 16px; white-space: nowrap; border-bottom: 1px solid var(--border); }
-    th { background: linear-gradient(90deg, #f0fdfa, #eff6ff); color: #0f766e; font-weight: 700; font-size: .78rem; }
-    tbody tr:nth-child(even) td { background: #f8fafc; }
-    tbody tr:hover td { background: #ecfeff; }
-    tr:last-child td { border-bottom: none; }
-    code { background: #f1f5f9; padding: 2px 6px; border-radius: 6px; font-size: .78rem; color: var(--violet); }
+    .charts-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+    .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; }
+    .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-light); }
+    .chart-title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .chart-badge { font-size: 11px; color: var(--text-muted); background: var(--surface-alt); padding: 2px 8px; border-radius: var(--radius); }
+    .chart-canvas-container { position: relative; flex: 1; min-height: 220px; display: flex; align-items: center; justify-content: center; }
 
-    .badge { padding: 4px 10px; border-radius: 999px; font-size: .74rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
-    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-    .badge-paid { background: #dcfce7; color: #15803d; }
-    .badge-pending { background: #fef3c7; color: #b45309; }
-    .badge-confirmed { background: #e0f2fe; color: #0369a1; }
-    .badge-failed { background: #ffe4e6; color: #be123c; }
+    .tabs-bar { display: flex; align-items: center; gap: 32px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+    .tab-btn { background: none; border: none; padding: 12px 2px 14px; font-family: var(--font-sans); font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; position: relative; display: inline-flex; align-items: center; gap: 8px; transition: color 0.15s ease; }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); font-weight: 600; }
+    .tab-btn.active::after { content: ""; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background-color: var(--accent); }
+    .tab-pill-count { font-size: 11px; padding: 2px 7px; border-radius: 10px; background: var(--surface-alt); color: var(--text-muted); font-weight: 600; }
+    .tab-btn.active .tab-pill-count { background: var(--accent-light); color: var(--accent); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
 
-    .action-btn { padding: 6px 12px; font-size: .75rem; }
-    .btn-warning { background: linear-gradient(135deg, #f59e0b, #ea580c); }
-    .btn-secondary { background: linear-gradient(135deg, #0d9488, #0284c7); }
+    .table-container-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+    .table-toolbar { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-light); gap: 16px; flex-wrap: wrap; }
+    .table-toolbar-left { display: flex; align-items: center; gap: 12px; }
+    .table-toolbar-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    .table-search-input { height: 34px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius); font-family: var(--font-sans); font-size: 12px; background: var(--bg); outline: none; min-width: 240px; }
+    .table-search-input:focus { border-color: var(--accent); background: #FFFFFF; }
+    .table-responsive { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    thead tr { background-color: var(--surface-alt); border-bottom: 1px solid var(--border); }
+    th { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); padding: 12px 18px; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid var(--border-light); transition: background-color 0.1s ease; }
+    tbody tr:hover { background-color: #FAFBF9; }
+    tbody tr:last-child { border-bottom: none; }
+    td { padding: 14px 18px; font-size: 13px; color: var(--text); vertical-align: middle; }
 
-    .toast { position: fixed; bottom: 20px; right: 20px; background: #0f172a; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: .9rem; display: none; z-index: 1000; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+    .badge, .badge-status { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; padding: 3px 8px; border-radius: var(--radius); text-transform: uppercase; }
+    .badge-confirmed, .badge-paid { background-color: var(--accent-light); color: var(--accent); }
+    .badge-pending { background-color: var(--gold-bg); color: var(--gold-accent); }
+    .badge-cancelled, .badge-failed { background-color: var(--danger-bg); color: var(--danger); }
+
+    .btn-action, .action-btn { background: transparent; border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 10px; font-size: 12px; font-family: var(--font-sans); font-weight: 500; color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease; }
+    .btn-action:hover, .action-btn:hover { border-color: var(--text); background-color: var(--surface-alt); }
+    .btn-action-primary { color: var(--accent); border-color: var(--accent); }
+    .btn-action-primary:hover { background-color: var(--accent-light); }
+    .btn-warning { color: var(--gold-accent); border-color: var(--gold-accent); }
+    .btn-secondary { color: var(--text-muted); }
+
+    .modal-overlay { position: fixed; inset: 0; background-color: rgba(23, 33, 43, 0.45); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px; }
+    .modal-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); max-width: 440px; width: 100%; padding: 28px; box-shadow: var(--shadow-md); position: relative; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-header h2 { font-family: var(--font-serif); font-size: 20px; font-weight: 400; color: var(--text); }
+    .modal-close-btn { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; line-height: 1; }
+    .modal-close-btn:hover { color: var(--text); }
+    .modal-body { margin-bottom: 24px; }
+
+    .settings-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+    .settings-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); }
+    .settings-card-header { margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border-light); }
+    .settings-card-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .settings-card-desc { font-size: 12px; color: var(--text-muted); }
     
-    .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
-    .tab-btn { background: transparent; color: var(--muted); font-size: 1rem; padding: 8px 16px; border-radius: 8px; transition: 0.2s; }
-    .tab-btn.active { background: var(--sky); color: white; }
-    .tab-btn:hover:not(.active) { background: #e2e8f0; color: var(--text); }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .input-field { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; }
-    .card { background: var(--card); border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    .card h2 { margin-bottom: 16px; font-size: 1.1rem; }
-  
-    #login-gate { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
-    .login-card { background: var(--card); padding: 40px 30px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 380px; text-align: center; border-top: 4px solid var(--teal); }
-    .login-card h2 { margin-bottom: 8px; font-weight: 800; color: var(--text); font-size: 1.4rem; letter-spacing: -0.02em; }
-    .login-card p { margin-bottom: 24px; color: var(--muted); font-size: 0.9rem; }
-    .login-input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; }
-    .login-btn { width: 100%; padding: 12px; background: #0B6B62; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
-    .login-btn:hover:not(:disabled) { background: #09504a; }
-    .login-btn:disabled { opacity: 0.7; cursor: not-allowed; }
-    .login-error { color: #dc2626; font-size: 0.85rem; margin-top: 12px; display: none; font-weight: 500; }
-</style>
+    /* Utility */
+    .empty-chart { display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); font-size:13px; font-style:italic; }
+
+    @media (max-width: 900px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .charts-grid { grid-template-columns: 1fr; }
+      .admin-header { padding: 0 16px; }
+      .dashboard-container { padding: 20px 16px 48px; }
+    }
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .tabs-bar { gap: 16px; overflow-x: auto; white-space: nowrap; }
+    }
+  </style>
 </head>
 <body>
+
+  <div id="toast" class="toast" style="display:none; position:fixed; bottom:20px; right:20px; background:#1e293b; color:white; padding:12px 24px; border-radius:6px; z-index:99999; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">Notification</div>
+
+  <!-- LOGIN GATE -->
   <div id="login-gate">
     <div class="login-card">
-      <h2>REVA Health</h2>
-      <p>Secure Admin Dashboard</p>
-      <input type="email" id="gateEmail" class="login-input" placeholder="Admin email (optional)">
-      <input type="password" id="gateSecret" class="login-input" placeholder="Admin secret key">
-      <button class="login-btn" id="gateBtn" onclick="attemptLogin()">Unlock Dashboard</button>
-      <div id="gateError" class="login-error">Incorrect email or secret key</div>
-    </div>
-  </div>
-  <div id="dashboard-content" style="display: none;">
-
-
-  <div class="hero">
-    <div class="header">
-      <div class="brand">
-        <h1>🏥 REVA Health</h1>
-        <p>Admin dashboard · bookings, payments &amp; calendar sync</p>
+      <div class="login-header">
+        <h1>REVA Health</h1>
+        <p>Admin Dashboard</p>
       </div>
       
-      <div class="auth-box" style="background: transparent; box-shadow: none; backdrop-filter: none; padding: 0;">
-        <button class="btn-refresh" onclick="logout()" style="background: rgba(255,255,255,0.2);">Lock / Logout</button>
+      <div class="form-group">
+        <label for="gateEmail">Email Address</label>
+        <input type="email" id="gateEmail" class="form-input" placeholder="Admin email (optional)">
       </div>
-
+      <div class="form-group">
+        <label for="gateSecret">Access Secret</label>
+        <input type="password" id="gateSecret" class="form-input" placeholder="••••••••••••">
+      </div>
+      <button class="btn-primary" id="gateBtn" onclick="attemptLogin()">
+        Unlock Dashboard
+      </button>
+      
+      <div id="gateError" class="login-error" style="display:none; color: var(--danger); font-size: 13px; margin-top: 12px; text-align: center; font-weight: 600;">Incorrect email or secret key</div>
+      <div class="login-footnote">Protected operational system &bull; Authorized personnel only</div>
     </div>
   </div>
 
-  <div class="wrap">
-    <div class="stats-grid">
-      <div class="stat-card s-blue"><div class="stat-icon">📅</div><div><div class="label">Total bookings</div><div class="value" id="statBookings">0</div></div></div>
-      <div class="stat-card s-violet"><div class="stat-icon">💳</div><div><div class="label">Total payments</div><div class="value" id="statPayments">0</div></div></div>
-      <div class="stat-card s-amber"><div class="stat-icon">⏳</div><div><div class="label">Pending calendar sync</div><div class="value" id="statPendingSync">0</div></div></div>
-      <div class="stat-card s-green"><div class="stat-icon">💰</div><div><div class="label">Total revenue</div><div class="value" id="statRevenue">₹0</div></div></div>
-    </div>
+  <!-- DASHBOARD CONTENT -->
+  <div id="dashboard-content" style="display: none;">
+    <header class="admin-header">
+      <div class="brand-group">
+        <a href="#" class="brand-logo-text">REVA Health</a>
+        <span class="badge-admin">Admin</span>
+      </div>
+      <div class="header-actions">
+        <span class="header-meta">Environment: Production</span>
+        <button class="btn-ghost-white" onclick="logout()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          Lock / Logout
+        </button>
+      </div>
+    </header>
 
-    <div class="charts-grid">
-      <div class="chart-card">
-        <h3>Revenue over time</h3>
-        <div class="chart-box"><canvas id="revenueChart"></canvas><div class="empty-chart" id="emptyRevenue">No payments yet</div></div>
-      </div>
-      <div class="chart-card">
-        <h3>Appointment status</h3>
-        <div class="chart-box"><canvas id="statusChart"></canvas><div class="empty-chart" id="emptyStatus">No bookings yet</div></div>
-      </div>
-      <div class="chart-card">
-        <h3>Revenue by service</h3>
-        <div class="chart-box"><canvas id="serviceChart"></canvas><div class="empty-chart" id="emptyService">No paid bookings yet</div></div>
-      </div>
-    </div>
+    <main class="dashboard-container">
+      <!-- STATS -->
+      <section class="stats-grid">
+        <div class="stat-card card-bookings">
+          <span class="stat-card-label">Total Bookings</span>
+          <div class="stat-card-value" id="statBookings">-</div>
+          <span class="stat-card-subtext">Total system bookings</span>
+        </div>
+        <div class="stat-card card-revenue">
+          <span class="stat-card-label">Total Revenue</span>
+          <div class="stat-card-value" id="statRevenue">-</div>
+          <span class="stat-card-subtext">Processed payments</span>
+        </div>
+        <div class="stat-card card-payments">
+          <span class="stat-card-label">Total Payments</span>
+          <div class="stat-card-value" id="statPayments">-</div>
+          <span class="stat-card-subtext">Successful transactions</span>
+        </div>
+        <div class="stat-card card-sync">
+          <span class="stat-card-label">Pending Calendar Sync</span>
+          <div class="stat-card-value" id="statPendingSync">-</div>
+          <span class="stat-card-subtext">Action required</span>
+        </div>
+      </section>
 
-    <div class="tabs">
-      <button class="tab-btn active" id="btn-tab-bookings" onclick="switchTab('tab-bookings')">Bookings</button>
-      <button class="tab-btn" id="btn-tab-payments" onclick="switchTab('tab-payments')">Payments</button>
-      <button class="tab-btn" id="btn-tab-alerts" onclick="switchTab('tab-alerts')">Refund &amp; Conflicts Alerts</button>
-      <button class="tab-btn" id="btn-tab-settings" onclick="switchTab('tab-settings')">Settings</button>
-    </div>
+      <!-- CHARTS -->
+      <section class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Revenue Over Time</span>
+          </div>
+          <div class="chart-canvas-container">
+            <div class="empty-chart" id="emptyRevenue" style="display: none;">No data</div>
+            <canvas id="revenueChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Appointment Status</span>
+          </div>
+          <div class="chart-canvas-container">
+            <div class="empty-chart" id="emptyStatus" style="display: none;">No data</div>
+            <canvas id="statusChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Revenue by Service</span>
+          </div>
+          <div class="chart-canvas-container">
+            <div class="empty-chart" id="emptyService" style="display: none;">No data</div>
+            <canvas id="serviceChart"></canvas>
+          </div>
+        </div>
+      </section>
 
-    <!-- Bookings Tab -->
-    <div id="tab-bookings" class="tab-content active">
-      <div class="section-title">Appointments &amp; bookings</div>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Booking ID</th><th>Patient name</th><th>Phone</th><th>Service</th><th>Amount</th>
-              <th>Date &amp; time</th><th>Payment</th><th>Appt status</th><th>Calendar event</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="bookingsTable">
-            <tr><td colspan="10" style="text-align:center;color:var(--muted);">Connect using credentials above to load bookings.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    
-    <!-- Payments Tab -->
-    <div id="tab-payments" class="tab-content">
-      <div class="section-title">Payments &amp; transactions</div>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Payment ID</th><th>Booking ID</th><th>Razorpay ID</th><th>Amount</th>
-              <th>Currency</th><th>Status</th><th>Method</th><th>Timestamp</th>
-            </tr>
-          </thead>
-          <tbody id="paymentsTable">
-            <tr><td colspan="8" style="text-align:center;color:var(--muted);">No payments recorded yet.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    
-    <!-- Alerts Tab -->
-    <div id="tab-alerts" class="tab-content">
-      <div class="card">
-        <h2>Action Required: Potential Refunds</h2>
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Booking ID</th>
-                <th>Patient</th>
-                <th>Phone</th>
-                <th>Amount</th>
-                <th>Conflict Reason</th>
-              </tr>
-            </thead>
-            <tbody id="alertsTable">
-              <tr><td colspan="5" style="text-align:center;color:var(--muted);">No alerts</td></tr>
-            </tbody>
-          </table>
+      <!-- TABS -->
+      <nav class="tabs-bar" role="tablist">
+        <button class="tab-btn active" id="btn-tab-bookings" onclick="switchTab('tab-bookings')">
+          Bookings
+        </button>
+        <button class="tab-btn" id="btn-tab-payments" onclick="switchTab('tab-payments')">
+          Payments
+        </button>
+        <button class="tab-btn" id="btn-tab-alerts" onclick="switchTab('tab-alerts')">
+          Refund &amp; Conflicts Alerts
+        </button>
+        <button class="tab-btn" id="btn-tab-settings" onclick="switchTab('tab-settings')">
+          Settings
+        </button>
+      </nav>
+
+      <!-- TAB: BOOKINGS -->
+      <div id="tab-bookings" class="tab-pane active">
+        <div class="table-container-card">
+          <div class="table-toolbar">
+            <span class="table-toolbar-title">Active Patient Bookings</span>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Booking ID</th>
+                  <th>Patient Name</th>
+                  <th>Phone</th>
+                  <th>Service</th>
+                  <th>Amount</th>
+                  <th>Date &amp; Time</th>
+                  <th>Payment</th>
+                  <th>Appt Status</th>
+                  <th>Calendar Event</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="bookingsTable"></tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Settings Tab -->
-    <div id="tab-settings" class="tab-content">
-      <div class="card">
-        <h2>Business Hours</h2>
-        <div style="display: grid; gap: 1rem; max-width: 300px;">
-          <div><label>Start Time (HH:MM)</label><input type="time" id="set-start" class="input-field" /></div>
-          <div><label>End Time (HH:MM)</label><input type="time" id="set-end" class="input-field" /></div>
-          <div><label>Working Days (comma separated)</label><input type="text" id="set-days" class="input-field" placeholder="mon,tue,wed,thu,fri,sat" /></div>
-          <div><label>Lead Time (Hours)</label><input type="number" id="set-lead" class="input-field" placeholder="1" /></div>
-          <button class="btn btn-secondary" onclick="saveSettings()">Save Working Hours</button>
+      <!-- TAB: PAYMENTS -->
+      <div id="tab-payments" class="tab-pane">
+        <div class="table-container-card">
+          <div class="table-toolbar">
+            <span class="table-toolbar-title">Settlement Transactions</span>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Payment ID</th>
+                  <th>Booking ID</th>
+                  <th>Razorpay ID</th>
+                  <th>Amount</th>
+                  <th>Currency</th>
+                  <th>Status</th>
+                  <th>Method</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody id="paymentsTable"></tbody>
+            </table>
+          </div>
         </div>
       </div>
-      <div class="card" style="margin-top: 1rem;">
-        <h2>Service Pricing</h2>
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Service Name</th>
-                <th>Current Price</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="servicesTable">
-              <tr><td colspan="3" style="text-align:center;color:var(--muted);">Loading...</td></tr>
-            </tbody>
-          </table>
+
+      <!-- TAB: ALERTS -->
+      <div id="tab-alerts" class="tab-pane">
+        <div class="table-container-card">
+          <div class="table-toolbar">
+            <span class="table-toolbar-title">Action Required: Potential Refunds</span>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Booking ID</th>
+                  <th>Patient</th>
+                  <th>Phone</th>
+                  <th>Amount</th>
+                  <th>Conflict Reason</th>
+                </tr>
+              </thead>
+              <tbody id="alertsTable"></tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
 
+      <!-- TAB: SETTINGS -->
+      <div id="tab-settings" class="tab-pane">
+        <div class="settings-grid">
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div class="settings-card-title">Clinic Operating Hours</div>
+              <div class="settings-card-desc">Define standard booking availability across primary care suites</div>
+            </div>
+            
+            <div class="form-group">
+              <label>Start Time (HH:MM)</label>
+              <input type="text" id="set-start" class="form-input" placeholder="e.g. 09:00">
+            </div>
+            <div class="form-group">
+              <label>End Time (HH:MM)</label>
+              <input type="text" id="set-end" class="form-input" placeholder="e.g. 18:00">
+            </div>
+            <div class="form-group">
+              <label>Working Days (comma separated)</label>
+              <input type="text" id="set-days" class="form-input" placeholder="mon,tue,wed,thu,fri">
+            </div>
+            <div class="form-group">
+              <label>Lead Time (Hours)</label>
+              <input type="number" id="set-lead" class="form-input" placeholder="24">
+            </div>
+            <button class="btn-primary" onclick="saveSettings()" style="width:auto; padding:0 24px;">Save Working Hours</button>
+          </div>
+
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <div class="settings-card-title">Service Pricing</div>
+              <div class="settings-card-desc">Active fee schedules synced with checkout engine</div>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Service Name</th>
+                    <th>Current Price</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="servicesTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
   </div>
 
-    </div>
-
-  <!-- Update Status Modal -->
-  <div id="statusModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:2rem; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:100; border-radius:12px; width:350px;">
-    <h3 style="margin-top:0;">Update Booking Status</h3>
-    <input type="hidden" id="statusModalBookingId" />
-    <div style="margin-bottom:1rem;">
-      <label>Appointment Status</label>
-      <select id="modalApptStatus" class="input-field">
-        <option value="">--Select--</option>
-        <option value="REQUESTED">REQUESTED</option>
-        <option value="CONFIRMATION_PENDING">CONFIRMATION_PENDING</option>
-        <option value="CONFIRMED">CONFIRMED</option>
-        <option value="CANCELLED">CANCELLED</option>
-      </select>
-    </div>
-    <div style="margin-bottom:1rem;">
-      <label>Payment Status</label>
-      <select id="modalPayStatus" class="input-field">
-        <option value="">--Select--</option>
-        <option value="PENDING">PENDING</option>
-        <option value="PAID">PAID</option>
-        <option value="FAILED">FAILED</option>
-        <option value="REFUNDED">REFUNDED</option>
-      </select>
-    </div>
-    <div style="display:flex; gap:10px; justify-content:flex-end;">
-      <button class="btn btn-secondary" onclick="document.getElementById('statusModal').style.display='none'; document.getElementById('statusModalBackdrop').style.display='none';">Cancel</button>
-      <button class="btn" onclick="submitUpdateStatus()">Save</button>
+  <!-- STATUS MODAL -->
+  <div id="statusModalBackdrop" class="modal-overlay" style="display:none;"></div>
+  <div id="statusModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Update Booking Status</h2>
+        <button class="modal-close-btn" onclick="document.getElementById('statusModal').style.display='none'; document.getElementById('statusModalBackdrop').style.display='none';">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="statusModalBookingId">
+        <div class="form-group">
+          <label>Appointment Status</label>
+          <select id="modalApptStatus" class="form-input" style="height: 40px; cursor: pointer;">
+            <option value="">-- Select --</option>
+            <option value="REQUESTED">REQUESTED</option>
+            <option value="CONFIRMED">CONFIRMED</option>
+            <option value="CANCELLED">CANCELLED</option>
+            <option value="PAID_SLOT_CONFLICT">PAID_SLOT_CONFLICT</option>
+            <option value="SLOT_EXPIRED">SLOT_EXPIRED</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Payment Status</label>
+          <select id="modalPayStatus" class="form-input" style="height: 40px; cursor: pointer;">
+            <option value="">-- Select --</option>
+            <option value="PENDING">PENDING</option>
+            <option value="PAID">PAID</option>
+            <option value="REFUNDED">REFUNDED</option>
+            <option value="FAILED">FAILED</option>
+          </select>
+        </div>
+        <button class="btn-primary" onclick="submitUpdateStatus()">Save Updates</button>
+      </div>
     </div>
   </div>
-  <div id="statusModalBackdrop" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99;" onclick="document.getElementById('statusModal').style.display='none'; this.style.display='none';"></div>
-
-  <div id="toast" class="toast"></div>
 
   <script>
     
