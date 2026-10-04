@@ -641,8 +641,8 @@
             <td>
               ${isPendingSync ? `<button class="action-btn btn-warning" onclick="retrySync('${escapeHtml(b.booking_id)}')">Retry sync</button>` : ''}
               <button class="action-btn" onclick="openUpdateModal('${escapeHtml(b.booking_id)}')">Update Status</button>
-              <button class="action-btn btn-secondary" onclick="sendCustomMeetLink('')">Send GMeet Link</button>
-              <button class="action-btn btn-secondary" onclick="resendEmail('')">Resend Email</button>
+              <button class="action-btn btn-secondary" onclick="sendCustomMeetLink('${escapeHtml(b.booking_id)}')">Send GMeet Link</button>
+              <button class="action-btn btn-secondary" onclick="resendEmail('${escapeHtml(b.booking_id)}')">Resend Email</button>
             </td>
           </tr>`;
       }).join('');
