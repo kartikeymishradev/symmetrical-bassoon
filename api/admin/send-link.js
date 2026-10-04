@@ -45,7 +45,7 @@ module.exports = async (req, res) => {
     
     if (emailRes.success) {
       const { updateBookingNotes } = require('../../lib/sheets');
-      await updateBookingNotes(body.bookingId, 'GMeet Link Sent');
+      await updateBookingNotes(body.bookingId, `GMeet Link Sent: ${body.meetingLink}`);
       return res.status(200).json({ success: true });
     } else {
       return res.status(500).json({ error: 'Failed to send meeting link email' });
