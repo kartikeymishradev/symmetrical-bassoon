@@ -544,10 +544,7 @@ h1, h2, h3, h4 {
   color: var(--text);
 }
 
-.trust-bullet {
-  color: var(--accent);
-  font-size: 0.6rem;
-}
+.trust-bullet { display: inline-block; width: 8px; height: 8px; background-color: #0B6B62; margin-right: 8px; vertical-align: middle; }
 
 /* Hero Doctor Card */
 .hero-card-column {

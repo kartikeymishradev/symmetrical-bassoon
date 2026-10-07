@@ -562,7 +562,7 @@
       document.getElementById('statPayments').textContent = payments.length;
       document.getElementById('statPendingSync').textContent = bookings.filter(b => b.appointment_status === 'CONFIRMATION_PENDING').length;
       const rev = payments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
-      document.getElementById('statRevenue').textContent = `&#8377;${rev.toLocaleString()}`;
+      document.getElementById('statRevenue').textContent = `₹${rev.toLocaleString('en-IN')}`;
     }
 
     function drawChart(id, emptyId, hasData, config) {
