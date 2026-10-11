@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -588,8 +588,29 @@
       grad.addColorStop(0, 'rgba(13,148,136,.45)'); grad.addColorStop(1, 'rgba(2,132,199,.02)');
       drawChart('revenueChart', 'emptyRevenue', days.length > 0, {
         type: 'line',
-        data: { labels: days, datasets: [{ label: 'Revenue (&#8377;)', data: days.map(d => byDay[d]), borderColor: '#0d9488', backgroundColor: grad, fill: true, tension: .35, pointBackgroundColor: '#fff', pointBorderColor: '#0d9488', pointBorderWidth: 2, pointRadius: 4 }] },
-        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#eef2f7' } }, x: { grid: { display: false } } } }
+        data: { labels: days, datasets: [{ label: 'Revenue (₹)', data: days.map(d => byDay[d]), borderColor: '#0d9488', backgroundColor: grad, fill: true, tension: .35, pointBackgroundColor: '#fff', pointBorderColor: '#0d9488', pointBorderWidth: 2, pointRadius: 4 }] },
+        options: {
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` Revenue: ₹${Number(context.raw || 0).toLocaleString('en-IN')}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: '#eef2f7' },
+              ticks: {
+                callback: function(val) { return '₹' + Number(val).toLocaleString('en-IN'); }
+              }
+            },
+            x: { grid: { display: false } }
+          }
+        }
       });
 
       const statusCount = {};
@@ -609,8 +630,30 @@
       const svc = Object.entries(bySvc).sort((a, b) => b[1] - a[1]).slice(0, 6);
       drawChart('serviceChart', 'emptyService', svc.length > 0, {
         type: 'bar',
-        data: { labels: svc.map(s => s[0]), datasets: [{ label: 'Revenue (&#8377;)', data: svc.map(s => s[1]), backgroundColor: svc.map((_, i) => PALETTE[i % PALETTE.length]), borderRadius: 8 }] },
-        options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: '#eef2f7' } }, y: { grid: { display: false } } } }
+        data: { labels: svc.map(s => s[0]), datasets: [{ label: 'Revenue (₹)', data: svc.map(s => s[1]), backgroundColor: svc.map((_, i) => PALETTE[i % PALETTE.length]), borderRadius: 8 }] },
+        options: {
+          indexAxis: 'y',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` Revenue: ₹${Number(context.raw || 0).toLocaleString('en-IN')}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              grid: { color: '#eef2f7' },
+              ticks: {
+                callback: function(val) { return '₹' + Number(val).toLocaleString('en-IN'); }
+              }
+            },
+            y: { grid: { display: false } }
+          }
+        }
       });
     }
 
@@ -627,13 +670,16 @@
         if (b.appointment_status === 'CONFIRMED') apptClass = 'badge-confirmed';
         if (b.appointment_status === 'CANCELLED' || b.appointment_status === 'SLOT_CONFLICT_CANCELLED') apptClass = 'badge-failed';
         const payClass = isPaid ? 'badge-paid' : 'badge-pending'; const linkSent = (b.notes || '').includes('GMeet Link Sent'); const linkBtnText = linkSent ? 'GMeet Sent \u2705' : 'Send GMeet Link';
+        const cleanPhone = (b.phone_number || '').replace(/[^0-9]/g, '');
+        const waLink = cleanPhone ? `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}` : '#';
+        const phoneDisplay = b.phone_number ? escapeHtml(b.phone_number) : '-';
         return `
           <tr>
             <td><strong>${escapeHtml(b.booking_id)}</strong></td>
             <td>${escapeHtml(b.patient_name || '-')}</td>
-            <td><a href="https://wa.me/" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;"></a></td>
+            <td><a href="${waLink}" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;">${phoneDisplay}</a></td>
             <td>${escapeHtml(b.service_name || '-')}</td>
-            <td><strong>&#8377;${escapeHtml(b.amount || '-')}</strong></td>
+            <td><strong>₹${escapeHtml(b.amount || '-')}</strong></td>
             <td>${escapeHtml(b.appointment_date)} ${escapeHtml(b.appointment_time)}</td>
             <td><span class="badge ${payClass}">${escapeHtml(b.payment_status || 'PENDING')}</span></td>
             <td><span class="badge ${apptClass}">${escapeHtml(b.appointment_status || 'REQUESTED')}</span></td>
@@ -706,17 +752,20 @@
           document.getElementById('set-lead').value = escapeHtml(data.settings.lead_time_hours || '');
           
           const tbody = document.getElementById('servicesTable');
-          tbody.innerHTML = (data.services || []).map(s => '<tr><td>'+escapeHtml(s.service_name)+'</td><td>&#8377;'+escapeHtml(s.price)+'</td><td><button class="action-btn" onclick="updatePrice(\''+escapeHtml(s.service_id)+'\')">Update Price</button></td></tr>').join('');
+          tbody.innerHTML = (data.services || []).map(s => '<tr><td>'+escapeHtml(s.service_name)+'</td><td>₹'+escapeHtml(s.price)+'</td><td><button class="action-btn" onclick="updatePrice(\''+escapeHtml(s.service_id)+'\')">Update Price</button></td></tr>').join('');
         }
       } catch(e) { showToast('Failed to load settings', true); }
     }
 
     async function saveSettings() {
-      const start_time = document.getElementById('set-start').value;
-      const end_time = document.getElementById('set-end').value;
-      const working_days = document.getElementById('set-days').value;
-      const lead_time_hours = document.getElementById('set-lead').value;
-      showToast('Saving...');
+      const start_time = document.getElementById('set-start').value.trim();
+      const end_time = document.getElementById('set-end').value.trim();
+      const working_days = document.getElementById('set-days').value.trim();
+      const lead_time_hours = document.getElementById('set-lead').value.trim();
+      if (!start_time || !end_time) {
+        return showToast('Please enter both start and end time', true);
+      }
+      showToast('Saving working hours...');
       try {
         const res = await fetch('/api/admin/settings', {
           method: 'POST',
@@ -724,8 +773,13 @@
           body: JSON.stringify({ action: 'update_settings', start_time, end_time, working_days, lead_time_hours })
         });
         const data = await res.json();
-        if(data.success) showToast('Saved!'); else showToast(data.error || 'Error saving', true);
-      } catch(e) { showToast('Network error', true); }
+        if(data.success) {
+          showToast('Working hours saved successfully! \u2705');
+          loadSettings();
+        } else {
+          showToast(data.error || 'Error saving settings', true);
+        }
+      } catch(e) { showToast('Network error: ' + e.message, true); }
     }
 
     async function updatePrice(serviceId) {

@@ -45,11 +45,37 @@ module.exports = async (req, res) => {
         const updateRes = await updateServicePrice(serviceId, price);
         return updateRes.success ? res.status(200).json({ success: true }) : res.status(500).json({ error: updateRes.error || 'Failed' });
       }
+function normalizeTimeString(t) {
+  if (!t || typeof t !== 'string') return null;
+  t = t.trim();
+  const ampmMatch = t.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)$/i);
+  if (ampmMatch) {
+    let h = parseInt(ampmMatch[1], 10);
+    const m = parseInt(ampmMatch[2] || '0', 10);
+    const isPm = ampmMatch[3].toLowerCase() === 'pm';
+    if (isPm && h < 12) h += 12;
+    if (!isPm && h === 12) h = 0;
+    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+  }
+  const match24 = t.match(/^(\d{1,2}):(\d{2})$/);
+  if (match24) {
+    const h = parseInt(match24[1], 10);
+    const m = parseInt(match24[2], 10);
+    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+  }
+  return null;
+}
+
       if (action === 'update_settings') {
-        const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-        if (!timeRegex.test(start_time) || !timeRegex.test(end_time)) return res.status(400).json({ error: 'Invalid time format. Please use 24-hour HH:MM format (e.g., 09:00, 18:00)' });
-        const [startH, startM] = start_time.split(':').map(Number);
-        const [endH, endM] = end_time.split(':').map(Number);
+        const normStart = normalizeTimeString(start_time);
+        const normEnd = normalizeTimeString(end_time);
+        if (!normStart || !normEnd) return res.status(400).json({ error: 'Invalid time format. Please use standard time (e.g. 09:00, 18:00, or 9:00 AM, 6:00 PM)' });
+        const [startH, startM] = normStart.split(':').map(Number);
+        const [endH, endM] = normEnd.split(':').map(Number);
         if ((startH * 60 + startM) >= (endH * 60 + endM)) return res.status(400).json({ error: 'Start time must be before end time.' });
         const validDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
         const daysArr = String(working_days || '').split(',').map(d => d.trim().toLowerCase()).filter(Boolean);
@@ -57,7 +83,7 @@ module.exports = async (req, res) => {
         if (invalidDays.length > 0 || daysArr.length === 0) return res.status(400).json({ error: `Invalid days provided. Use comma-separated short names (mon,tue). Found invalid: ${invalidDays.join(',')}` });
         const leadHrs = parseFloat(lead_time_hours);
         if (isNaN(leadHrs) || leadHrs < 0 || leadHrs > 72) return res.status(400).json({ error: 'Invalid lead time. Must be a number between 0 and 72 hours.' });
-        const updateRes = await saveSettingsToSheets({ start_time, end_time, working_days, lead_time_hours });
+        const updateRes = await saveSettingsToSheets({ start_time: normStart, end_time: normEnd, working_days, lead_time_hours });
         return updateRes.success ? res.status(200).json({ success: true }) : res.status(500).json({ error: updateRes.error || 'Failed' });
       }
       return res.status(400).json({ error: 'Invalid action.' });
